@@ -1,0 +1,9 @@
+numpy==1.26.0
+opencv-python
+matplotlib
+scikit-image
+imageio
+torch
+torchvision
+torchsummary
+tensorboardX

@@ -1,0 +1,40 @@
+<launch>
+    <!-- specify the planning pipeline -->
+    <arg name="pipeline" default="ompl" />
+
+    <!-- Panda specific options -->
+    <arg name="load_gripper" default="true" />
+    <arg name="transmission" default="effort" />
+
+    <!-- Gazebo specific options -->
+    <arg name="gazebo_gui" default="true" />
+    <arg name="paused" default="false" />
+
+    <!-- Set the GAZEBO_MODEL_PATH environment variable -->
+    <env name="GAZEBO_MODEL_PATH" value="$(optenv GAZEBO_MODEL_PATH):$(find franka_gazebo)/models"/>
+
+    <!-- Launch the gazebo simulator and spawn the robot -->
+    <include file="$(find franka_gazebo)/launch/panda.launch" pass_all_args="true">
+    <arg name="headless" value="$(eval not arg('gazebo_gui'))" />
+    <arg name="use_gripper" default="$(arg load_gripper)" />
+    <arg name="controller" default="$(arg transmission)_joint_trajectory_controller" />
+    </include>
+
+    <!-- Spawn the table model -x 0.6 for scene view-->
+    <node name="spawn_table" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/wooden_table/model.sdf -sdf -model table -x 0.6 -y 0 -z 0 -R 0 -P 0 -Y 1.5707"/>
+
+    <!-- Spawn the cube model, Scene View, z = table surface z position (0.3) + table surface height/2 (0.009/2) + cube height/2 (0.013/2) = 0.311 -->
+    <node name="spawn_cube" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/cube_20k/model.sdf -sdf -model cube_20k -x 0.6 -y 0 -z 0.311" />
+
+
+    <include file="$(find panda_moveit_config)/launch/demo.launch" pass_all_args="true">
+    <!-- robot description is loaded by gazebo.launch, to enable Gazebo features -->
+    <arg name="load_robot_description" value="false" />
+    <!-- MoveItSimpleControllerManager provides ros_control's JointTrajectory controllers
+    as well as GripperCommand actions -->
+    <arg name="moveit_controller_manager" value="simple" />
+    </include>
+
+</launch>

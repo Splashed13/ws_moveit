@@ -1,3 +1,9 @@
 /build
 /devel
 /logs
+/.catkin_tools
+/src/.rosinstall
+/src/.rosinstall.bak
+/src/panda_moveit/PointCloudData/*
+/src/panda_moveit/ggcnn/ggcnn_weights_cornell
+/src/panda_moveit/ggcnn/ggcnn2_weights_cornell
