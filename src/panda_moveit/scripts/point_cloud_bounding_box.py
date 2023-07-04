@@ -4,7 +4,7 @@ import numpy as np
 
 class PointCloudBoundingBox(object):
     def __init__(self):
-        self.pcd = o3d.io.read_point_cloud("/home/tho868/ws_moveit/src/panda_moveit/PointCloudData/test_pcd.pcd")
+        self.pcd = o3d.io.read_point_cloud("/home/tho868/Github/ws_moveit/src/panda_moveit/PointCloudData/test_pcd.pcd")
 
     def get_centre(self, draw=False) -> np.ndarray:
         # Convert Open3D.o3d.geometry.PointCloud to numpy array
@@ -57,7 +57,9 @@ class PointCloudBoundingBox(object):
         if draw:
             # Visualize the point cloud along with the coordinate frame and bounding box
             coord_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
-            o3d.visualization.draw_geometries([cube_pcd, coord_frame, bbox])
+            #o3d.visualization.draw_geometries([cube_pcd, coord_frame, bbox])
+            # o3d.visualization.draw_geometries([cropped_pcd, coord_frame])
+            o3d.visualization.draw_geometries([self.pcd, coord_frame,bbox])
 
         return bbox.get_center()
 

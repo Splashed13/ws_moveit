@@ -75,5 +75,9 @@
         "variant": "cpp",
         "codecvt": "cpp"
     },
-    "python.defaultInterpreterPath": "/usr/bin/python3"
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.extraPaths": [
+        "./devel/lib/python3/dist-packages"
+    ],
+    "C_Cpp.default.compilerPath": "/usr/bin/cpp"
 }
