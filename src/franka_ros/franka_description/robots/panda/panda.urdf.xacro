@@ -23,7 +23,7 @@
   <!-- If `gazebo` arg is set and `parent` not empty, what rotation offset between `parent` & $(arm_id)_link0 -->
   <xacro:arg name="rpy" default="0 0 0" />
 
-  <xacro:panda_gazebo arm_id="panda"/>
+  <!-- <xacro:panda_gazebo arm_id="panda"/> -->
 
   <xacro:franka_robot arm_id="$(arg arm_id)"
                       joint_limits="${xacro.load_yaml('$(find franka_description)/robots/panda/joint_limits.yaml')}"
@@ -51,11 +51,11 @@
   <origin xyz="0.045 0.0 0.055" rpy="0.0 -1.34 0.0"/>
   </xacro:sensor_d435> -->
 
- <!-- Scene view (D435 optimal range 0.3m-10m) -->
- <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>
+ <!-- Scene view (D435 optimal range 0.3m-10m) [Comment out when running roslaunch panda_moveit run_sim.launch]-->
+ <!-- <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>
   <xacro:sensor_d435  parent="panda_link0" name="D435_camera1" topics_ns="D435_camera1" align_depth="true" visualize="true" enable_pointCloud="true" clip_distance="10">
     <origin xyz="0.0 0.4 0.425" rpy="0.0 0.26 -0.58875"/>
- </xacro:sensor_d435>
+ </xacro:sensor_d435> -->
 
   <!-- Scene view (D435 optimal range 0.3m-10m) -->
   <!-- <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>

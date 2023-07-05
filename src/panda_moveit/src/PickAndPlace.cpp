@@ -2,19 +2,23 @@
 #include "../include/panda_moveit/PickAndPlace.hpp"
 
 // Define the namespace to group related code together
-
-    PickandPlace::PickandPlace() : nh("pnp")
-    {   
-
+    PickandPlace::PickandPlace() : 
+    // identifiers responsible for initializing the declared variables
+    nh("pnp")
+    // visual_tools("panda_link0")
+    {    
         // Set up a publisher for the pose point visualization marker
         pose_point_pub = nh.advertise<visualization_msgs::Marker>("pose_point", 10);
 
         move_group_interface_arm = std::make_unique<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP_ARM);
         move_group_interface_gripper = std::make_unique<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP_GRIPPER);
 
+
         // Set the planning time for the arm movement
-        const double PLANNING_TIME = 15.0;
         move_group_interface_arm->setPlanningTime(PLANNING_TIME);
+
+
+        // visual_tools.loadPlanningSceneMonitor();
 
     }
 
@@ -52,6 +56,9 @@
             jointValuesString += std::to_string(joint) + ", ";
         }
         ROS_INFO_NAMED("pnp", "Home joint values: %s", jointValuesString.c_str());
+
+        joint_model_group_arm = move_group_interface_arm->getCurrentState()->getJointModelGroup(PLANNING_GROUP_ARM);
+
 
     }
 
@@ -102,24 +109,24 @@
     void PickandPlace::createCollisionScene()
     {
         // Floor
-        // std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
-        // std::vector<double> floor_position = {0.0, 0.0, -0.01};
-        // createCollisionObject("floor", floor_dimensions, floor_position, 0.0);
+        std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
+        std::vector<double> floor_position = {0.0, 0.0, -0.01};
+        createCollisionObject("floor", floor_dimensions, floor_position, 0.0);
 
-        // // Box 1
-        // std::vector<double> box1_dimensions = {0.2, 0.4, box1.at("z_height")};
-        // std::vector<double> box1_position = {box1.at("x_pos"), box1.at("y_pos"), box1.at("z_height") / 2.0};
-        // createCollisionObject("box1", box1_dimensions, box1_position, 0.0);
+        // Box 1
+        std::vector<double> box1_dimensions = {0.2, 0.4, box1.at("z_height")};
+        std::vector<double> box1_position = {box1.at("x_pos"), box1.at("y_pos"), box1.at("z_height") / 2.0};
+        createCollisionObject("box1", box1_dimensions, box1_position, 0.0);
 
-        // // Box 2
-        // std::vector<double> box2_dimensions = {0.3, 0.2, box2.at("z_height")};
-        // std::vector<double> box2_position = {box2.at("x_pos"), box2.at("y_pos"), box2.at("z_height") / 2};
-        // createCollisionObject("box2", box2_dimensions, box2_position, 0.0);
+        // Box 2
+        std::vector<double> box2_dimensions = {0.3, 0.2, box2.at("z_height")};
+        std::vector<double> box2_position = {box2.at("x_pos"), box2.at("y_pos"), box2.at("z_height") / 2};
+        createCollisionObject("box2", box2_dimensions, box2_position, 0.0);
 
-        // // Rod
-        // std::vector<double> rod_dimensions = {0.02, 0.02, rod_height};
-        // std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
-        // createCollisionObject("rod", rod_dimensions, rod_position, 45.0);
+        // Rod
+        std::vector<double> rod_dimensions = {0.02, 0.02, rod_height};
+        std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
+        createCollisionObject("rod", rod_dimensions, rod_position, 45.0);
     }
 
     void PickandPlace::clean_scene()
@@ -190,7 +197,12 @@
         bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
         // print if the arm was able to move to the target pose
-        ROS_INFO_NAMED("pnp", "Moving to pose target %s", success ? "" : "FAILED");
+        ROS_INFO_NAMED("pnp", "Planning to pose target %s", success ? "" : "FAILED");
+
+        // ROS_INFO_NAMED("pnp", "Visualizing plan 1 as trajectory line");
+        // visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
+        // visual_tools.trigger();
+
     }
 
     void PickandPlace::add_pose_arrow(geometry_msgs::Point desired_position, float z_rotation)
@@ -224,7 +236,7 @@
         ROS_INFO_NAMED("pnp", "Pose arrow successfully published");
     }
 
-    void PickandPlace::determine_grasp_pose(void)
+    void PickandPlace::determine_grasp_pose()
     {   
         // create homogeneous transformation matrix for the depth camera relative to the arm base
         Eigen::Matrix4d homogeneous_mat_cam = Eigen::Matrix4d::Identity();
@@ -316,7 +328,7 @@
     }
 
 
-    void PickandPlace::run()
+    void PickandPlace::run_basic_pnp()
     {
         // Write robot details
         writeRobotDetails();
@@ -327,14 +339,18 @@
         // Create collision scene
         createCollisionScene();
 
-        // get rod position
-        //std::vector<double> rod_position = get_rod_position();
-
-        std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
-        ROS_INFO_NAMED("pnp", "Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
+        // Get rod position
+        std::vector<double> rod_position = get_rod_position();
+        
+        // // just the rod no box for testing purposes
+        // std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
+        // ROS_INFO_NAMED("pnp", "Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
         
         // set pose target (to change angle of the FLAT gripper, change the Y in RPY)
         set_pose_target(rod_position, {45, 90, 45});
+
+        ROS_INFO_NAMED("pnp", "Press any button to travel to target pose");
+        std::cin.ignore();
 
         // execute the plan
         move_group_interface_arm->move();
@@ -372,8 +388,7 @@ int main(int argc, char **argv)
     PickandPlace pnp;
 
     // ROS spinning must be running for the MoveGroupInterface to get information
-    // about the robot's state. One way to do this is to start an AsyncSpinner
-    // beforehand.
+    // about the robot's state. One way to do this is to start an AsyncSpinner beforehand.
     ros::AsyncSpinner spinner(5);
     spinner.start();
 
@@ -381,7 +396,7 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // Run pick and place operations
-    pnp.test();
+    pnp.run_basic_pnp();
 
     // Shutdown the node and join the thread back before exiting
     ros::shutdown();

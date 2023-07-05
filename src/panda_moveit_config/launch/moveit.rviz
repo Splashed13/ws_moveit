@@ -13,6 +13,7 @@ Panels:
         - /TF1/Tree1
         - /Marker1
         - /PointCloud21
+        - /MarkerArray1
       Splitter Ratio: 0.7404426336288452
     Tree Height: 811
   - Class: rviz/Help
@@ -74,47 +75,6 @@ Visualization Manager:
         Interrupt Display: false
         Links:
           All Links Enabled: true
-          D435_camera1_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera1_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
@@ -264,47 +224,6 @@ Visualization Manager:
         Attached Body Color: 150; 50; 150
         Links:
           All Links Enabled: true
-          D435_camera1_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera1_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
@@ -424,32 +343,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        D435_camera1_bottom_screw_frame:
-          Value: false
-        D435_camera1_color_frame:
-          Value: false
-        D435_camera1_color_optical_frame:
-          Value: false
-        D435_camera1_depth_frame:
-          Value: false
-        D435_camera1_depth_optical_frame:
-          Value: true
-        D435_camera1_left_ir_frame:
-          Value: false
-        D435_camera1_left_ir_optical_frame:
-          Value: false
-        D435_camera1_link:
-          Value: false
-        D435_camera1_right_ir_frame:
-          Value: false
-        D435_camera1_right_ir_optical_frame:
-          Value: false
-        panda_EE:
-          Value: false
-        panda_K:
-          Value: false
-        panda_NE:
-          Value: false
         panda_hand:
           Value: true
         panda_hand_sc:
@@ -505,20 +398,6 @@ Visualization Manager:
       Tree:
         world:
           panda_link0:
-            D435_camera1_bottom_screw_frame:
-              D435_camera1_link:
-                D435_camera1_depth_frame:
-                  D435_camera1_color_frame:
-                    D435_camera1_color_optical_frame:
-                      {}
-                  D435_camera1_depth_optical_frame:
-                    {}
-                  D435_camera1_left_ir_frame:
-                    D435_camera1_left_ir_optical_frame:
-                      {}
-                  D435_camera1_right_ir_frame:
-                    D435_camera1_right_ir_optical_frame:
-                      {}
             panda_link0_sc:
               {}
             panda_link1:
@@ -543,10 +422,6 @@ Visualization Manager:
                           panda_link7_sc:
                             {}
                           panda_link8:
-                            panda_NE:
-                              panda_EE:
-                                panda_K:
-                                  {}
                             panda_hand:
                               panda_hand_sc:
                                 {}
@@ -560,7 +435,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /pose_point
+      Marker Topic: /pnp/pose_point
       Name: Marker
       Namespaces:
         {}
@@ -594,6 +469,14 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /rviz_visual_tools
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -626,9 +509,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.595000147819519
+      Pitch: 0.3950001299381256
       Target Frame: panda_link0
-      Yaw: 0.2867811918258667
+      Yaw: 6.254956245422363
     Saved: ~
 Window Geometry:
   Displays:
@@ -647,4 +530,4 @@ Window Geometry:
     collapsed: false
   Width: 1956
   X: 0
-  Y: 0
+  Y: 1680

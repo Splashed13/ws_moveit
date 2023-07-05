@@ -49,6 +49,7 @@
   <depend>realsense_gazebo_description</depend>
   <depend>pcl_conversions</depend>
   <depend>pcl_ros</depend>
+
   <!-- <depend>python-o3d</depend> -->
   <!-- <depend>realsense2_description</depend> -->
 

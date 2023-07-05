@@ -1,6 +1,7 @@
 // ROS
 #include <ros/ros.h>
 #include <cmath>
+
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -14,6 +15,11 @@
 #include <geometry_msgs/Pose.h>
 #include <boost/algorithm/string/join.hpp>
 
+#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <moveit_msgs/DisplayRobotState.h>
+#include <moveit_msgs/DisplayTrajectory.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+
 
 // This class contains all the functions needed to perform the pick and place operation
 class PickandPlace
@@ -22,6 +28,7 @@ private:
     ros::NodeHandle nh;
     ros::Publisher pose_point_pub;
     // Set global parameters of panda arm
+    const double PLANNING_TIME = 15.0;
     const std::vector<double> OPEN_GRIPPER = {0.035, 0.035};
     const std::vector<double> CLOSE_GRIPPER = {0.011, 0.011};
     const double end_effector_palm_length = 0.058 * 1.8; // 1.4 is padding
@@ -47,6 +54,10 @@ private:
 
     // planning_scene_interface allows us to add and remove collision objects in the world
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    // moveit_visual_tools::MoveItVisualTools visual_tools;
+
+    const moveit::core::JointModelGroup* joint_model_group_arm;
 
 
     std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
@@ -185,7 +196,7 @@ public:
      * 
      * @note This function does not take any parameters and does not return a value.
      */
-    void run(void);
+    void run_basic_pnp(void);
 
     void test(void);
 

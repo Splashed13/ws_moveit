@@ -1,4 +1,5 @@
 <launch>
+  <!-- Copy of demo_gazebo.launch from panda_moveit_config -->
   <arg name="arm_id" default="panda" />
 
   <!-- specify the planning pipeline -->
