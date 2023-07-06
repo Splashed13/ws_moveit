@@ -55,9 +55,11 @@ private:
     // planning_scene_interface allows us to add and remove collision objects in the world
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
-    // moveit_visual_tools::MoveItVisualTools visual_tools;
+    moveit_visual_tools::MoveItVisualTools visual_tools;
 
     const moveit::core::JointModelGroup* joint_model_group_arm;
+
+    
 
 
     std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
@@ -126,7 +128,7 @@ public:
      * @param translation A vector containing the desired position of the end effector in the order: x, y, z.
      * @param rotation A vector containing the desired rotation of the end effector in Euler angles ZYZ in degrees.
      */
-    void set_pose_target(std::vector<double> translation, std::vector<double> rotation);
+    geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation);
 
     /**
      * @brief Adds a pose arrow marker at the desired position with the given rotation.
@@ -135,6 +137,10 @@ public:
      * @param z_rotation The rotation of the arrow around the z-axis in radians.
      */
     void add_pose_arrow(geometry_msgs::Point desired_position, float z_rotation);
+
+    Eigen::Matrix3d eulerZYZ_to_rotation_matrix(std::vector<double> euler_angles);
+
+    void plan_and_execute_pose(geometry_msgs::Pose target_pose);
 
     void determine_grasp_pose(void);
 
@@ -168,15 +174,10 @@ public:
      */
     void go_to_home_position(void);
 
-    /**
-     * @brief Opens the gripper.
-     * 
-     * This function uses MoveIt! to plan and execute a trajectory that moves the gripper from its current position to its open position.
-     * A message is printed to the ROS console indicating whether the trajectory planning was successful or not.
-     * If the plan is successful, the gripper is then moved to the open position.
-     * 
-     * @note This function does not take any parameters and does not return a value.
-    */
+
+    void go_to_zero_state(void);
+
+
     void open_gripper(void);
 
     /**

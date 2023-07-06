@@ -4,8 +4,8 @@
 // Define the namespace to group related code together
     PickandPlace::PickandPlace() : 
     // identifiers responsible for initializing the declared variables
-    nh("pnp")
-    // visual_tools("panda_link0")
+    nh("pnp"),
+    visual_tools("panda_link0")
     {    
         // Set up a publisher for the pose point visualization marker
         pose_point_pub = nh.advertise<visualization_msgs::Marker>("pose_point", 10);
@@ -17,8 +17,8 @@
         // Set the planning time for the arm movement
         move_group_interface_arm->setPlanningTime(PLANNING_TIME);
 
-
-        // visual_tools.loadPlanningSceneMonitor();
+        // load the planning scene monitor
+        visual_tools.loadPlanningSceneMonitor();
 
     }
 
@@ -50,13 +50,15 @@
     
         // Get the home joint values and print them out
         home_joint_values = move_group_interface_arm->getCurrentJointValues();
-        std::string jointValuesString;
+        std::vector<std::string> strValues;
         for (const auto &joint : home_joint_values)
         {
-            jointValuesString += std::to_string(joint) + ", ";
+            strValues.push_back(std::to_string(joint));
         }
+        std::string jointValuesString = boost::algorithm::join(strValues, ", ");
         ROS_INFO_NAMED("pnp", "Home joint values: %s", jointValuesString.c_str());
 
+        // assign the joint model group of panda arm to declared raw pointer
         joint_model_group_arm = move_group_interface_arm->getCurrentState()->getJointModelGroup(PLANNING_GROUP_ARM);
 
 
@@ -139,21 +141,28 @@
         planning_scene_interface.removeCollisionObjects(object_ids);
     }
 
-
-    void PickandPlace::set_pose_target(std::vector<double> translation, std::vector<double> rotation)
-    {
-        // Euler angles to radians
+    Eigen::Matrix3d PickandPlace::eulerZYZ_to_rotation_matrix(std::vector<double> euler_angles){
         std::vector<double> rotation_rads = {
-            rotation[0] * M_PI / 180.0,
-            rotation[1] * M_PI / 180.0,
-            rotation[2] * M_PI / 180.0};
+            euler_angles[0] * M_PI / 180.0,
+            euler_angles[1] * M_PI / 180.0,
+            euler_angles[2] * M_PI / 180.0
+        };
 
-        Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
         Eigen::Matrix3d Rz1, Ry, Rz2;
         Rz1 = (Eigen::AngleAxisd(rotation_rads[0], Eigen::Vector3d::UnitZ())).toRotationMatrix();
         Ry = (Eigen::AngleAxisd(rotation_rads[1], Eigen::Vector3d::UnitY())).toRotationMatrix();
         Rz2 = (Eigen::AngleAxisd(rotation_rads[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
-        Eigen::Matrix3d R = Rz1 * Ry * Rz2;
+        
+        return Rz1 * Ry * Rz2;
+
+    }
+
+
+    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation)
+    {
+        // Euler angles to radians
+        Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
+        Eigen::Matrix3d R =  eulerZYZ_to_rotation_matrix(rotation);
         homogeneous_mat_arm.block<3, 3>(0, 0) = R;
         homogeneous_mat_arm(0, 3) = translation[0];
         homogeneous_mat_arm(1, 3) = translation[1];
@@ -188,21 +197,10 @@
         pose_target.orientation = orientation;
 
         // add pose arrow
-        add_pose_arrow(pose_target.position, rotation_rads[2]);
-
-        // set the pose target
-        move_group_interface_arm->setPoseTarget(pose_target);
-
-        // move to arm to the target pose
-        bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-        // print if the arm was able to move to the target pose
-        ROS_INFO_NAMED("pnp", "Planning to pose target %s", success ? "" : "FAILED");
-
-        // ROS_INFO_NAMED("pnp", "Visualizing plan 1 as trajectory line");
-        // visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
-        // visual_tools.trigger();
-
+        add_pose_arrow(pose_target.position, 0.0)
+        // add_pose_arrow(pose_target.position, rotation_rads[2]);
+        
+        return pose_target;
     }
 
     void PickandPlace::add_pose_arrow(geometry_msgs::Point desired_position, float z_rotation)
@@ -271,7 +269,15 @@
         // add pose arrow for object
         // add_pose_arrow(position, 1.57);       
  
-        
+    }
+
+    void PickandPlace::go_to_zero_state(void)
+    {
+        // move all joints to zero state
+        std::vector<double> joint_group_positions = {0, 0, 0, 0, 0, 0, 0};
+        move_group_interface_arm->setJointValueTarget(joint_group_positions);
+        move_group_interface_arm->move();
+
     }
 
 
@@ -327,6 +333,30 @@
 
     }
 
+    void PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target){
+        // set the pose target
+        move_group_interface_arm->setPoseTarget(pose_target);
+
+        // move to arm to the target pose
+        bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+        // print if the arm was able to move to the target pose
+        ROS_INFO_NAMED("pnp", "Planning to pose target %s", success ? "" : "FAILED");
+
+        ROS_INFO_NAMED("pnp", "Visualizing plan as trajectory line");
+        visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
+        visual_tools.trigger();
+
+
+        ROS_INFO_NAMED("pnp", "Press any button to travel to target pose");
+        std::cin.ignore();
+        move_group_interface_arm->execute(plan);
+
+        // clear the visual tools
+        visual_tools.deleteAllMarkers();
+
+    }
+
 
     void PickandPlace::run_basic_pnp()
     {
@@ -347,16 +377,12 @@
         // ROS_INFO_NAMED("pnp", "Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
         
         // set pose target (to change angle of the FLAT gripper, change the Y in RPY)
-        set_pose_target(rod_position, {45, 90, 45});
-
-        ROS_INFO_NAMED("pnp", "Press any button to travel to target pose");
-        std::cin.ignore();
-
-        // execute the plan
-        move_group_interface_arm->move();
+        geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {45, 90, 45});
 
         ROS_INFO_NAMED("pnp", "Target Reached - Press any button to continue");
         std::cin.ignore();
+
+        plan_and_execute_pose(desired_pose);
 
         // reset
         go_to_home_position();
@@ -371,10 +397,14 @@
     void PickandPlace::test(){
         writeRobotDetails();
         open_gripper();
-        determine_grasp_pose();
+        go_to_zero_state(); 
         ROS_INFO_NAMED("pnp", "Simulation Complete - Press any button to exit");
         std::cin.ignore();
-        remove_pose_arrow();
+
+        // determine_grasp_pose();
+        // ROS_INFO_NAMED("pnp", "Simulation Complete - Press any button to exit");
+        // std::cin.ignore();
+        // remove_pose_arrow();
     }
 
 
@@ -396,7 +426,7 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // Run pick and place operations
-    pnp.run_basic_pnp();
+    pnp.test();
 
     // Shutdown the node and join the thread back before exiting
     ros::shutdown();
