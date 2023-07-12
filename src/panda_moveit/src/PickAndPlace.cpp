@@ -25,27 +25,27 @@
     void PickandPlace::writeRobotDetails()
     {
         // Print out the planning frame for the arm
-        ROS_INFO_NAMED("pnp", "Planning frame: %s", move_group_interface_arm->getPlanningFrame().c_str());
+        ROS_INFO("Planning frame: %s", move_group_interface_arm->getPlanningFrame().c_str());
 
         // Get the link names for the arm and concatenate them into a single string, then print
         std::vector<std::string> linkNames = move_group_interface_arm->getLinkNames();
         std::string linkNamesArm = boost::algorithm::join(linkNames, ", ");
-        ROS_INFO_NAMED("pnp", "Arm links: %s", linkNamesArm.c_str());
+        ROS_INFO("Arm links: %s", linkNamesArm.c_str());
 
         // Get the joint names for the arm and concatenate them into a single string, then print
         std::vector<std::string> jointNamesArm = move_group_interface_arm->getJoints();
         std::string jointNamesArmString = boost::algorithm::join(jointNamesArm, ", ");
-        ROS_INFO_NAMED("pnp", "Arm joint names: %s", jointNamesArmString.c_str());
+        ROS_INFO("Arm joint names: %s", jointNamesArmString.c_str());
 
         // Get the joint names for the gripper and concatenate them into a single string, then print
         std::vector<std::string> jointNamesGripper = move_group_interface_gripper->getJoints();
         std::string jointNamesGripperString = boost::algorithm::join(jointNamesGripper, ", ");
-        ROS_INFO_NAMED("pnp", "Gripper joints names: %s", jointNamesGripperString.c_str());
+        ROS_INFO("Gripper joints names: %s", jointNamesGripperString.c_str());
 
         // Get the list of all available planning groups, concatenate them into a single string, then print
         std::vector<std::string> planningGroups = move_group_interface_arm->getJointModelGroupNames();
         std::string planningGroupsString = boost::algorithm::join(planningGroups, ", ");
-        ROS_INFO_NAMED("pnp", "Available Planning Groups: %s", planningGroupsString.c_str());
+        ROS_INFO("Available Planning Groups: %s", planningGroupsString.c_str());
 
     
         // Get the home joint values and print them out
@@ -56,7 +56,7 @@
             strValues.push_back(std::to_string(joint));
         }
         std::string jointValuesString = boost::algorithm::join(strValues, ", ");
-        ROS_INFO_NAMED("pnp", "Home joint values: %s", jointValuesString.c_str());
+        ROS_INFO("Home joint values: %s", jointValuesString.c_str());
 
         // assign the joint model group of panda arm to declared raw pointer
         joint_model_group_arm = move_group_interface_arm->getCurrentState()->getJointModelGroup(PLANNING_GROUP_ARM);
@@ -104,7 +104,7 @@
         planning_scene_interface.addCollisionObjects(collision_objects);
 
         // ROS_INFO_NAMED added object frame.id to world
-        ROS_INFO_NAMED("pnp", "Added %s into the world", id.c_str());
+        ROS_INFO("Added %s into the world", id.c_str());
     }
 
     
@@ -141,39 +141,49 @@
         planning_scene_interface.removeCollisionObjects(object_ids);
     }
 
-    Eigen::Matrix3d PickandPlace::eulerZYZ_to_rotation_matrix(std::vector<double> euler_angles){
+    Eigen::Matrix3d PickandPlace::eulerXYZ_to_rotation_matrix(std::vector<double> euler_angles){
         std::vector<double> rotation_rads = {
             euler_angles[0] * M_PI / 180.0,
             euler_angles[1] * M_PI / 180.0,
             euler_angles[2] * M_PI / 180.0
         };
 
-        Eigen::Matrix3d Rz1, Ry, Rz2;
-        Rz1 = (Eigen::AngleAxisd(rotation_rads[0], Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        Eigen::Matrix3d Rx, Ry, Rz;
+        Rx = (Eigen::AngleAxisd(rotation_rads[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
         Ry = (Eigen::AngleAxisd(rotation_rads[1], Eigen::Vector3d::UnitY())).toRotationMatrix();
-        Rz2 = (Eigen::AngleAxisd(rotation_rads[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        Rz = (Eigen::AngleAxisd(rotation_rads[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
         
-        return Rz1 * Ry * Rz2;
+        return Rx * Ry * Rz;
 
     }
 
 
     geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation)
     {
-        // Euler angles to radians
+        // rotation is about the relative frame of the end effector
         Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
-        Eigen::Matrix3d R =  eulerZYZ_to_rotation_matrix(rotation);
-        homogeneous_mat_arm.block<3, 3>(0, 0) = R;
+        //Eigen::Matrix3d R_ee = eulerXYZ_to_rotation_matrix(rotation);
+        homogeneous_mat_arm.block<3, 3>(0, 0) = eulerXYZ_to_rotation_matrix(rotation);
         homogeneous_mat_arm(0, 3) = translation[0];
         homogeneous_mat_arm(1, 3) = translation[1];
         homogeneous_mat_arm(2, 3) = translation[2];
 
-        // Create a homogeneous transformation matrix for the end effector with no rotation
+        // Create a homogeneous transformation matrix for the end effector with a rotation 
+        // to align with panda_hand TF frame (conventional gripper axis)
         Eigen::Matrix4d homogeneous_trans_end_effector = Eigen::Matrix4d::Identity();
+        // Eigen::Matrix3d Rz = (Eigen::AngleAxisd(-45*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        // homogeneous_trans_end_effector.block<3, 3>(0, 0) = Rz;
         homogeneous_trans_end_effector(2, 3) = end_effector_palm_length;
 
+        // // relative rotation of end effector descirbed with homogeneous transformation matrix
+        // Eigen::Matrix4d homogeneous_mat_ee = Eigen::Matrix4d::Identity();
+        // homogeneous_mat_ee.block<3, 3>(0, 0) = R_ee;
+
         // Multiply the homogeneous transformation matrix of the arm by the inverse of the homogeneous transformation matrix of the end effector
-        Eigen::Matrix4d homogeneous_mat = homogeneous_mat_arm * homogeneous_trans_end_effector.inverse();
+        Eigen::Matrix4d homogeneous_mat = homogeneous_mat_arm; // * homogeneous_trans_end_effector; // * homogeneous_mat_ee; // .inverse();
+
+        // retreive rotation matrix from homogeneous_mat as Eigen::Matrix3d
+        Eigen::Matrix3d R = homogeneous_mat.block<3, 3>(0, 0);
 
         // Create a quaternion from euler angles
         tf2::Quaternion quaternion;
@@ -196,14 +206,45 @@
         pose_target.position = position;
         pose_target.orientation = orientation;
 
+        // add pose point for testing purposes
+        //add_pose_point(position);
+
+        add_pose_arrow(homogeneous_mat);
+
         // add pose arrow
-        add_pose_arrow(pose_target.position, 0.0)
-        // add_pose_arrow(pose_target.position, rotation_rads[2]);
+        //add_pose_arrow(pose_target.position, rotation[2]*M_PI/180.0);   
+        
+        // for testing purposes
+        //add_pose_arrow(pose_target.position, 0.0);
         
         return pose_target;
     }
 
-    void PickandPlace::add_pose_arrow(geometry_msgs::Point desired_position, float z_rotation)
+    void PickandPlace::add_pose_point(geometry_msgs::Point desired_position)
+    {
+        // Publish a marker at the desired pose
+        visualization_msgs::Marker marker;
+        marker.ns = "point";
+        marker.id = 0;
+        marker.header.frame_id = "panda_link0";
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.scale.x = 0.02;
+        marker.scale.y = 0.02;
+        marker.scale.z = 0.02;
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+        marker.color.a = 1.0;
+
+        marker.pose.position = desired_position;
+
+        pose_point_pub.publish(marker);
+
+        ROS_INFO("Added pose point");
+    }
+
+    void PickandPlace::add_pose_arrow(Eigen::Matrix4d ee_pose)
     {
         // Publish a marker at the desired pose
         visualization_msgs::Marker marker;
@@ -220,18 +261,43 @@
         marker.color.b = 1.0;
         marker.color.a = 1.0;
 
-        tf2::Quaternion quaternion;
-        quaternion.setRPY(0, 0, z_rotation);
-        geometry_msgs::Pose Pose;
-        Pose.position = desired_position;
-        Pose.orientation = tf2::toMsg(quaternion);
-        marker.pose = Pose;
+        // tf2::Quaternion quaternion;
+        // quaternion.setRPY(0, 0, z_rotation);
+        // geometry_msgs::Pose Pose;
+        // Pose.position = desired_position;
+        // Pose.orientation = tf2::toMsg(quaternion);
+        // marker.pose = Pose;
 
+        // rotation of arrow to align with palm frame with respect to the world frame
+        Eigen::Matrix4d homogeneous_mat = Eigen::Matrix4d::Identity();
+        homogeneous_mat.block<3,3>(0, 0) = eulerXYZ_to_rotation_matrix({0.0, -90.0, 0.0});
+
+        // multiply the homogeneous transformation matrix of the arrow by the homogeneous transformation matrix of the end effector
+        Eigen::Matrix4d homogeneous_mat_arrow = homogeneous_mat * ee_pose;
+
+        // retrieve pose from homogeneous matrix
+        geometry_msgs::Pose pose;
+        pose.position.x = ee_pose(0, 3);
+        pose.position.y = ee_pose(1, 3);
+        pose.position.z = ee_pose(2, 3);
+
+        // convert rotation matrix to quaternion
+        Eigen::Matrix3d R = homogeneous_mat_arrow.block<3, 3>(0, 0);
+        tf2::Quaternion quaternion;
+        Eigen::Quaterniond eigen_quat(R);
+        tf2::convert(tf2::toMsg(eigen_quat), quaternion);
+
+        // set orientation of arrow
+        pose.orientation = tf2::toMsg(quaternion);
+
+        // set pose of arrow
+        marker.pose = pose;
+         
         // Publish the marker
         pose_point_pub.publish(marker);
 
         // print pose arrow successfully published
-        ROS_INFO_NAMED("pnp", "Pose arrow successfully published");
+        ROS_INFO("Pose arrow successfully published");
     }
 
     void PickandPlace::determine_grasp_pose()
@@ -239,7 +305,7 @@
         // create homogeneous transformation matrix for the depth camera relative to the arm base
         Eigen::Matrix4d homogeneous_mat_cam = Eigen::Matrix4d::Identity();
         Eigen::Matrix3d Rz1, Ry, Rz2;
-        Rz1 = (Eigen::AngleAxisd(depth_camera_rotation[0], Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        Rz1 = (Eigen::AngleAxisd(depth_camera_rotation[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
         Ry = (Eigen::AngleAxisd(depth_camera_rotation[1], Eigen::Vector3d::UnitY())).toRotationMatrix();
         Rz2 = (Eigen::AngleAxisd(depth_camera_rotation[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
         Eigen::Matrix3d R = Rz1 * Ry * Rz2;
@@ -264,7 +330,7 @@
         position.z = homogeneous_mat_object_arm(2, 3);
 
         // print the position of the object relative to the arm base
-        ROS_INFO_NAMED("pnp", "Object position relative to the arm base: x = %f, y = %f, z = %f", position.x, position.y, position.z);
+        ROS_INFO("Object position relative to the arm base: x = %f, y = %f, z = %f", position.x, position.y, position.z);
 
         // add pose arrow for object
         // add_pose_arrow(position, 1.57);       
@@ -292,13 +358,13 @@
         pose_point_pub.publish(marker);
 
         // print pose arrow successfully removed
-        ROS_INFO_NAMED("pnp", "Pose arrow successfully removed");
+        ROS_INFO("Pose arrow successfully removed");
     }
 
 
     std::vector<double> PickandPlace::get_rod_position()
     {
-        auto object_poses = planning_scene_interface.getObjectPoses({"rod"});
+        auto object_poses = planning_scene_interface.getObjectPoses({"rod"});   
         if (object_poses.count("rod") == 0)
         {
             throw std::runtime_error("Rod not found in object_poses");
@@ -317,7 +383,7 @@
         bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
         // print if the arm was able to move to the target pose
-        ROS_INFO_NAMED("pnp", "Moving to home position %s", success ? "" : "FAILED");
+        ROS_INFO("Moving to home position %s", success ? "" : "FAILED");
 
         // move the arm to the target pose
         move_group_interface_arm->move();
@@ -328,7 +394,7 @@
         // Set the joint value target for the gripper
         move_group_interface_gripper->setJointValueTarget(OPEN_GRIPPER);
         bool success = (move_group_interface_gripper->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-        ROS_INFO_NAMED("pnp", "Opening gripper %s", success ? "" : "FAILED");
+        ROS_INFO("Opening gripper %s", success ? "" : "FAILED");
         move_group_interface_gripper->move();
 
     }
@@ -341,19 +407,25 @@
         bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
         // print if the arm was able to move to the target pose
-        ROS_INFO_NAMED("pnp", "Planning to pose target %s", success ? "" : "FAILED");
+        ROS_INFO("Planning to pose target %s", success ? "" : "FAILED");
 
-        ROS_INFO_NAMED("pnp", "Visualizing plan as trajectory line");
+        ROS_INFO("Visualizing plan as trajectory line");
         visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
         visual_tools.trigger();
 
 
-        ROS_INFO_NAMED("pnp", "Press any button to travel to target pose");
+        ROS_INFO("Press any button to travel to target pose");
         std::cin.ignore();
         move_group_interface_arm->execute(plan);
 
         // clear the visual tools
         visual_tools.deleteAllMarkers();
+
+    }
+
+    std::vector<double> PickandPlace::get_current_ee_position(void){
+
+        return {move_group_interface_arm->getCurrentPose().pose.position.x, move_group_interface_arm->getCurrentPose().pose.position.y, move_group_interface_arm->getCurrentPose().pose.position.z};
 
     }
 
@@ -367,29 +439,46 @@
         open_gripper();
 
         // Create collision scene
-        createCollisionScene();
+        //createCollisionScene();
 
         // Get rod position
-        std::vector<double> rod_position = get_rod_position();
+        //std::vector<double> rod_position = get_rod_position();
         
         // // just the rod no box for testing purposes
-        // std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
-        // ROS_INFO_NAMED("pnp", "Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
+        std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
+        ROS_INFO("Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
         
         // set pose target (to change angle of the FLAT gripper, change the Y in RPY)
-        geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {45, 90, 45});
+        //geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {45, 90, 45});
 
-        ROS_INFO_NAMED("pnp", "Target Reached - Press any button to continue");
+        // horizontal approach
+        geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {0, 180, 0});
+
+        // vertical approach
+        // geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {0, 180, 0});
+
+
+        //go_to_zero_state();
+
+        // print position of end effector
+        ROS_INFO("End effector position: x = %f, y = %f, z = %f", move_group_interface_arm->getCurrentPose().pose.position.x, move_group_interface_arm->getCurrentPose().pose.position.y, move_group_interface_arm->getCurrentPose().pose.position.z);
+    
+
+        ROS_INFO("Pose Calculated - Press any button to continue");
         std::cin.ignore();
 
         plan_and_execute_pose(desired_pose);
+
+        // press any button to return home
+        ROS_INFO("Press any button to return home");
+        std::cin.ignore();
 
         // reset
         go_to_home_position();
         clean_scene();
         remove_pose_arrow();
 
-        ROS_INFO_NAMED("pnp", "Simulation Complete - Press any button to exit");
+        ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
    
     }
@@ -398,11 +487,11 @@
         writeRobotDetails();
         open_gripper();
         go_to_zero_state(); 
-        ROS_INFO_NAMED("pnp", "Simulation Complete - Press any button to exit");
+        ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
 
         // determine_grasp_pose();
-        // ROS_INFO_NAMED("pnp", "Simulation Complete - Press any button to exit");
+        // ROS_INFO("Simulation Complete - Press any button to exit");
         // std::cin.ignore();
         // remove_pose_arrow();
     }
@@ -426,7 +515,7 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // Run pick and place operations
-    pnp.test();
+    pnp.run_basic_pnp();
 
     // Shutdown the node and join the thread back before exiting
     ros::shutdown();

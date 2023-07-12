@@ -43,7 +43,7 @@ private:
     // MoveIt operates on sets of joints called "planning groups" and stores them in an object called
     // the `JointModelGroup`. Throughout MoveIt the terms "planning group" and "joint model group"
     // are used interchangeably.
-    const std::string PLANNING_GROUP_ARM = "panda_arm";
+    const std::string PLANNING_GROUP_ARM = "panda_manipulator";
     const std::string PLANNING_GROUP_GRIPPER = "panda_hand";
 
     std::unique_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_arm;
@@ -58,8 +58,6 @@ private:
     moveit_visual_tools::MoveItVisualTools visual_tools;
 
     const moveit::core::JointModelGroup* joint_model_group_arm;
-
-    
 
 
     std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
@@ -111,7 +109,7 @@ public:
      * @param rotation_z The rotation of the object around the z-axis in degrees.
      */
     void createCollisionObject(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z);
-    
+
     /**
      * @brief Creates a collision scene including the floor and various objects.
      */
@@ -130,17 +128,15 @@ public:
      */
     geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation);
 
-    /**
-     * @brief Adds a pose arrow marker at the desired position with the given rotation.
-     *
-     * @param desired_position The position of the arrow.
-     * @param z_rotation The rotation of the arrow around the z-axis in radians.
-     */
-    void add_pose_arrow(geometry_msgs::Point desired_position, float z_rotation);
+    void add_pose_arrow(Eigen::Matrix4d ee_pose);
 
-    Eigen::Matrix3d eulerZYZ_to_rotation_matrix(std::vector<double> euler_angles);
+    std::vector<double> get_current_ee_position(void);
+
+    Eigen::Matrix3d eulerXYZ_to_rotation_matrix(std::vector<double> euler_angles);
 
     void plan_and_execute_pose(geometry_msgs::Pose target_pose);
+
+    void add_pose_point(geometry_msgs::Point position);
 
     void determine_grasp_pose(void);
 
