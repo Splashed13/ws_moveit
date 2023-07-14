@@ -73,7 +73,8 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "geometry": "cpp"
     },
     "python.defaultInterpreterPath": "/usr/bin/python3",
     "python.analysis.extraPaths": [

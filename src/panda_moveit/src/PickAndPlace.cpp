@@ -1,5 +1,6 @@
 // Include the header file for the "pick_and_place" functionality
 #include "../include/panda_moveit/PickAndPlace.hpp"
+#include "../include/panda_moveit/Utilities.hpp"
 
 // Define the namespace to group related code together
     PickandPlace::PickandPlace() : 
@@ -12,7 +13,6 @@
 
         move_group_interface_arm = std::make_unique<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP_ARM);
         move_group_interface_gripper = std::make_unique<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP_GRIPPER);
-
 
         // Set the planning time for the arm movement
         move_group_interface_arm->setPlanningTime(PLANNING_TIME);
@@ -34,9 +34,6 @@
 
         // Get the joint names for the arm and concatenate them into a single string, then print
         std::vector<std::string> jointNamesArm = move_group_interface_arm->getJoints();
-        std::string jointNamesArmString = boost::algorithm::join(jointNamesArm, ", ");
-        ROS_INFO("Arm joint names: %s", jointNamesArmString.c_str());
-
         // Get the joint names for the gripper and concatenate them into a single string, then print
         std::vector<std::string> jointNamesGripper = move_group_interface_gripper->getJoints();
         std::string jointNamesGripperString = boost::algorithm::join(jointNamesGripper, ", ");
@@ -65,7 +62,7 @@
     }
 
 
-    void PickandPlace::createCollisionObject(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z)
+    void PickandPlace::createCollisionObjectBox(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z)
     {
         // Create collision object
         moveit_msgs::CollisionObject collision_object;
@@ -108,114 +105,120 @@
     }
 
     
-    void PickandPlace::createCollisionScene()
-    {
-        // Floor
-        std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
-        std::vector<double> floor_position = {0.0, 0.0, -0.01};
-        createCollisionObject("floor", floor_dimensions, floor_position, 0.0);
+    void PickandPlace::createCollisionScene(int scene_num)
+    {   
+        scene = scene_num;
+        if(scene == 1){
+            // Floor
+            std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
+            std::vector<double> floor_position = {0.0, 0.0, -0.01};
+            createCollisionObjectBox("floor", floor_dimensions, floor_position, 0.0);
 
-        // Box 1
-        std::vector<double> box1_dimensions = {0.2, 0.4, box1.at("z_height")};
-        std::vector<double> box1_position = {box1.at("x_pos"), box1.at("y_pos"), box1.at("z_height") / 2.0};
-        createCollisionObject("box1", box1_dimensions, box1_position, 0.0);
+            // Box 1
+            std::vector<double> box1_dimensions = {0.2, 0.4, 0.2};
+            std::vector<double> box1_position = {0.6, 0.2, box1_dimensions[2] / 2.0};
+            createCollisionObjectBox("box1", box1_dimensions, box1_position, 0.0);
 
-        // Box 2
-        std::vector<double> box2_dimensions = {0.3, 0.2, box2.at("z_height")};
-        std::vector<double> box2_position = {box2.at("x_pos"), box2.at("y_pos"), box2.at("z_height") / 2};
-        createCollisionObject("box2", box2_dimensions, box2_position, 0.0);
+            // Box 2
+            std::vector<double> box2_dimensions = {0.3, 0.2, 0.1};
+            std::vector<double> box2_position = {0, 0.6, box2_dimensions[2] / 2};
+            createCollisionObjectBox("box2", box2_dimensions, box2_position, 0.0);
 
-        // Rod
-        std::vector<double> rod_dimensions = {0.02, 0.02, rod_height};
-        std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
-        createCollisionObject("rod", rod_dimensions, rod_position, 45.0);
+            // Rod
+            std::vector<double> rod_dimensions = {0.02, 0.02, 0.2};
+            std::vector<double> rod_position = {box1_position[0], box1_position[1], rod_dimensions[2] / 2.0 + box1_dimensions[2]};
+            createCollisionObjectBox("rod", rod_dimensions, rod_position, 45.0);
+            ROS_INFO("Basic Pick and Place scene created");
+
+        }else if(scene == 2){
+            // Table 
+            std::vector<double> box1_dimensions = {0.2, 0.4, 0.2};
+            std::vector<double> box1_position = {0.6, 0, box1_dimensions[2] / 2.0};
+            createCollisionObjectBox("table", box1_dimensions, box1_position, 0.0);
+
+            // Basic Cube
+            std::vector<double> cube_dimensions = {0.02, 0.02, 0.02};
+            std::vector<double> cube_position = {box1_position[0], 0, box1_dimensions[2] + cube_dimensions[2] / 2.0};
+            createCollisionObjectBox("cube", cube_dimensions, cube_position, 0.0);
+
+
+        }else{
+            ROS_INFO("Empty scene");
+        }
+
     }
 
     void PickandPlace::clean_scene()
-    {
+    {   
         std::vector<std::string> object_ids;
-        object_ids.push_back("floor");
-        object_ids.push_back("box1");
-        object_ids.push_back("box2");
-        object_ids.push_back("rod");
-        planning_scene_interface.removeCollisionObjects(object_ids);
-    }
+        if(scene == 1){
+            object_ids.push_back("floor");
+            object_ids.push_back("box1");
+            object_ids.push_back("box2");
+            object_ids.push_back("rod");
+            planning_scene_interface.removeCollisionObjects(object_ids);
 
-    Eigen::Matrix3d PickandPlace::eulerXYZ_to_rotation_matrix(std::vector<double> euler_angles){
-        std::vector<double> rotation_rads = {
-            euler_angles[0] * M_PI / 180.0,
-            euler_angles[1] * M_PI / 180.0,
-            euler_angles[2] * M_PI / 180.0
-        };
+        }else if(scene == 2){
+            object_ids.push_back("table");
+            object_ids.push_back("cube");
+            planning_scene_interface.removeCollisionObjects(object_ids);
 
-        Eigen::Matrix3d Rx, Ry, Rz;
-        Rx = (Eigen::AngleAxisd(rotation_rads[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
-        Ry = (Eigen::AngleAxisd(rotation_rads[1], Eigen::Vector3d::UnitY())).toRotationMatrix();
-        Rz = (Eigen::AngleAxisd(rotation_rads[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
-        
-        return Rx * Ry * Rz;
+        }else{
+            ROS_INFO("Empty scene- No objects to clean");
+        }   
 
     }
 
 
-    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation)
-    {
+    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z, double pre_approach_distance)
+    {   
+        Eigen::Matrix4d homogeneous_mat;
+        Eigen::Matrix3d arrow_rotation;
         // rotation is about the relative frame of the end effector
         Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
-        //Eigen::Matrix3d R_ee = eulerXYZ_to_rotation_matrix(rotation);
-        homogeneous_mat_arm.block<3, 3>(0, 0) = eulerXYZ_to_rotation_matrix(rotation);
+        homogeneous_mat_arm.block<3, 3>(0, 0) = Utilities::eulerXYZ_to_rotation_matrix(rotation);
         homogeneous_mat_arm(0, 3) = translation[0];
         homogeneous_mat_arm(1, 3) = translation[1];
         homogeneous_mat_arm(2, 3) = translation[2];
 
-        // Create a homogeneous transformation matrix for the end effector with a rotation 
-        // to align with panda_hand TF frame (conventional gripper axis)
-        Eigen::Matrix4d homogeneous_trans_end_effector = Eigen::Matrix4d::Identity();
-        // Eigen::Matrix3d Rz = (Eigen::AngleAxisd(-45*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-        // homogeneous_trans_end_effector.block<3, 3>(0, 0) = Rz;
-        homogeneous_trans_end_effector(2, 3) = end_effector_palm_length;
+        arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0);
 
-        // // relative rotation of end effector descirbed with homogeneous transformation matrix
-        // Eigen::Matrix4d homogeneous_mat_ee = Eigen::Matrix4d::Identity();
-        // homogeneous_mat_ee.block<3, 3>(0, 0) = R_ee;
+        // if planning group arm is panda_arm
+        if(PLANNING_GROUP_ARM == "panda_arm"){
+            // Create a homogeneous translation matrix to account for the end effector (use when using panda arm)
+            Eigen::Matrix4d homogeneous_trans_end_effector = Eigen::Matrix4d::Identity();
+            homogeneous_trans_end_effector(2, 3) = end_effector_palm_length;
+            homogeneous_mat = homogeneous_mat_arm * homogeneous_trans_end_effector.inverse(); 
 
-        // Multiply the homogeneous transformation matrix of the arm by the inverse of the homogeneous transformation matrix of the end effector
-        Eigen::Matrix4d homogeneous_mat = homogeneous_mat_arm; // * homogeneous_trans_end_effector; // * homogeneous_mat_ee; // .inverse();
+        }else{
+            Eigen::Matrix4d homogeneous_end_effector = Eigen::Matrix4d::Identity();
 
-        // retreive rotation matrix from homogeneous_mat as Eigen::Matrix3d
-        Eigen::Matrix3d R = homogeneous_mat.block<3, 3>(0, 0);
+            if (rotation[1] == 90.0) {
+                homogeneous_end_effector.block<3, 3>(0, 0) = (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitX())).toRotationMatrix();
+                homogeneous_end_effector(2, 3) = pre_approach_distance; // arbitrary pre-grasp distance
+                ROS_INFO("Horizontal approach");
+                
+                // for pose arrow to point in the correct direction
+                arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0) * (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
-        // Create a quaternion from euler angles
-        tf2::Quaternion quaternion;
-        // get a quaternion from the rotation matrix R
-        Eigen::Quaterniond eigen_quat(R);
-        // convert eigen quaternion to tf quaternion
-        tf2::convert(tf2::toMsg(eigen_quat), quaternion);
+            }else if (rotation[1] == 180.0) {
+                // if pitch is 180 degrees (vertical), yaw the gripper around z-axis
+                homogeneous_end_effector.block<3, 3>(0, 0) = (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+                homogeneous_end_effector(2, 3) = pre_approach_distance; // arbitrary pre-grasp distance
+                ROS_INFO("Vertical approach");
+            
+            }else{
+                homogeneous_end_effector(2, 3) = pre_approach_distance;
+            }
 
-        // Create message types for the pose target
-        geometry_msgs::Quaternion orientation;
-        orientation = tf2::toMsg(quaternion);
+            homogeneous_mat = homogeneous_mat_arm * homogeneous_end_effector.inverse();    
 
-        geometry_msgs::Point position;
-        position.x = homogeneous_mat(0, 3);
-        position.y = homogeneous_mat(1, 3);
-        position.z = homogeneous_mat(2, 3);
+        }
+        // Convert the homogeneous transformation matrix to a pose
+        geometry_msgs::Pose pose_target = Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
 
-        // Set the target pose message
-        geometry_msgs::Pose pose_target;
-        pose_target.position = position;
-        pose_target.orientation = orientation;
-
-        // add pose point for testing purposes
-        //add_pose_point(position);
-
-        add_pose_arrow(homogeneous_mat);
-
-        // add pose arrow
-        //add_pose_arrow(pose_target.position, rotation[2]*M_PI/180.0);   
-        
-        // for testing purposes
-        //add_pose_arrow(pose_target.position, 0.0);
+        // add desired pose arrow
+        add_pose_arrow(pose_target.position, arrow_rotation);
         
         return pose_target;
     }
@@ -244,7 +247,7 @@
         ROS_INFO("Added pose point");
     }
 
-    void PickandPlace::add_pose_arrow(Eigen::Matrix4d ee_pose)
+    void PickandPlace::add_pose_arrow(geometry_msgs::Point point, Eigen::Matrix3d desired_pose_R)
     {
         // Publish a marker at the desired pose
         visualization_msgs::Marker marker;
@@ -261,55 +264,46 @@
         marker.color.b = 1.0;
         marker.color.a = 1.0;
 
-        // tf2::Quaternion quaternion;
-        // quaternion.setRPY(0, 0, z_rotation);
-        // geometry_msgs::Pose Pose;
-        // Pose.position = desired_position;
-        // Pose.orientation = tf2::toMsg(quaternion);
-        // marker.pose = Pose;
-
         // rotation of arrow to align with palm frame with respect to the world frame
-        Eigen::Matrix4d homogeneous_mat = Eigen::Matrix4d::Identity();
-        homogeneous_mat.block<3,3>(0, 0) = eulerXYZ_to_rotation_matrix({0.0, -90.0, 0.0});
+        Eigen::Matrix3d arrow_to_palm = Utilities::eulerXYZ_to_rotation_matrix({0.0, -90.0, 0.0});
 
         // multiply the homogeneous transformation matrix of the arrow by the homogeneous transformation matrix of the end effector
-        Eigen::Matrix4d homogeneous_mat_arrow = homogeneous_mat * ee_pose;
+        Eigen::Matrix3d arrow_rot = arrow_to_palm * desired_pose_R;
+
+        // convert rotation matrix to quaternion
+        tf2::Quaternion quaternion;
+        Eigen::Quaterniond eigen_quat(arrow_rot);
+        tf2::convert(tf2::toMsg(eigen_quat), quaternion);
 
         // retrieve pose from homogeneous matrix
         geometry_msgs::Pose pose;
-        pose.position.x = ee_pose(0, 3);
-        pose.position.y = ee_pose(1, 3);
-        pose.position.z = ee_pose(2, 3);
-
-        // convert rotation matrix to quaternion
-        Eigen::Matrix3d R = homogeneous_mat_arrow.block<3, 3>(0, 0);
-        tf2::Quaternion quaternion;
-        Eigen::Quaterniond eigen_quat(R);
-        tf2::convert(tf2::toMsg(eigen_quat), quaternion);
+        pose.position = point;
 
         // set orientation of arrow
         pose.orientation = tf2::toMsg(quaternion);
 
+        // Adjust the position of the arrow to make it end at the pose position
+        Eigen::Vector3d displacement = arrow_rot.col(0) * end_effector_palm_length; // displacement along x-axis
+        pose.position.x -= displacement.x();
+        pose.position.y -= displacement.y();
+        pose.position.z -= displacement.z();
+
         // set pose of arrow
         marker.pose = pose;
-         
+        
         // Publish the marker
         pose_point_pub.publish(marker);
 
         // print pose arrow successfully published
         ROS_INFO("Pose arrow successfully published");
+
     }
 
     void PickandPlace::determine_grasp_pose()
     {   
         // create homogeneous transformation matrix for the depth camera relative to the arm base
         Eigen::Matrix4d homogeneous_mat_cam = Eigen::Matrix4d::Identity();
-        Eigen::Matrix3d Rz1, Ry, Rz2;
-        Rz1 = (Eigen::AngleAxisd(depth_camera_rotation[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
-        Ry = (Eigen::AngleAxisd(depth_camera_rotation[1], Eigen::Vector3d::UnitY())).toRotationMatrix();
-        Rz2 = (Eigen::AngleAxisd(depth_camera_rotation[2], Eigen::Vector3d::UnitZ())).toRotationMatrix();
-        Eigen::Matrix3d R = Rz1 * Ry * Rz2;
-        homogeneous_mat_cam.block<3, 3>(0, 0) = R;
+        homogeneous_mat_cam.block<3, 3>(0, 0) = Utilities::eulerXYZ_to_rotation_matrix(depth_camera_rotation, false);
         homogeneous_mat_cam(0, 3) = depth_camera_position[0];
         homogeneous_mat_cam(1, 3) = depth_camera_position[1];
         homogeneous_mat_cam(2, 3) = depth_camera_position[2];
@@ -321,7 +315,7 @@
         homogeneous_mat_object(2, 3) = 0.7206;
 
         // create homogeneous transformation matrix for the object relative to the arm base
-        Eigen::Matrix4d homogeneous_mat_object_arm = homogeneous_mat_cam * homogeneous_mat_object;
+        Eigen::Matrix4d homogeneous_mat_object_arm = homogeneous_mat_cam * homogeneous_mat_object.inverse();
 
         // retrieve point object from homogeneous transformation matrix
         geometry_msgs::Point position;
@@ -331,9 +325,6 @@
 
         // print the position of the object relative to the arm base
         ROS_INFO("Object position relative to the arm base: x = %f, y = %f, z = %f", position.x, position.y, position.z);
-
-        // add pose arrow for object
-        // add_pose_arrow(position, 1.57);       
  
     }
 
@@ -362,17 +353,19 @@
     }
 
 
-    std::vector<double> PickandPlace::get_rod_position()
+    bool PickandPlace::get_object_pose(std::string object_name)
     {
-        auto object_poses = planning_scene_interface.getObjectPoses({"rod"});   
-        if (object_poses.count("rod") == 0)
+        auto object_poses = planning_scene_interface.getObjectPoses({object_name});   
+        if (object_poses.count(object_name) == 0)
         {
-            throw std::runtime_error("Rod not found in object_poses");
+            ROS_ERROR("%s not found in object_poses", object_name.c_str());
+            return false;  // Return an empty vector or some error value
         }
 
-        auto rod_pose = object_poses["rod"];
-        return {rod_pose.position.x, rod_pose.position.y, rod_pose.position.z};
+        object_pose = object_poses[object_name];
+        return true;
     }
+
 
     void PickandPlace::go_to_home_position()
     {
@@ -417,9 +410,11 @@
         ROS_INFO("Press any button to travel to target pose");
         std::cin.ignore();
         move_group_interface_arm->execute(plan);
-
-        // clear the visual tools
+        
+        // clear Sphere and Path namespaces from the visual tools rviz topic
         visual_tools.deleteAllMarkers();
+        visual_tools.trigger();
+
 
     }
 
@@ -430,7 +425,7 @@
     }
 
 
-    void PickandPlace::run_basic_pnp()
+    void PickandPlace::run()
     {
         // Write robot details
         writeRobotDetails();
@@ -438,61 +433,93 @@
         // open gripper
         open_gripper();
 
-        // Create collision scene
-        //createCollisionScene();
+        // get user input for scene must be a number if 1 then scene 1 if 2 then scene 2 else empty scene, ensure a valid input is entered
+        std::string scene_input;
+        while(true){
+            ROS_INFO("Enter scene number (1 or 2) or 0 for no scene: ");
+            std::cin >> scene_input;
+            if(scene_input == "1"){
+                createCollisionScene(1);
+                break;
+            }else if(scene_input == "2"){
+                createCollisionScene(2);
+                break;
+            }else if(scene_input == "0"){
+                break;
+            }else{
+                ROS_INFO("Invalid input");
+            }
+        }
 
-        // Get rod position
-        //std::vector<double> rod_position = get_rod_position();
+        if(scene_input != "0"){
+            if(scene_input == "1"){
+                if(!get_object_pose("rod")){
+                    return;
+                }
+
+            }else if(scene_input == "2"){
+                if(!get_object_pose("cube")){
+                    return;
+                }
+            }
+
+            std::vector<double> object_position = {object_pose.position.x, object_pose.position.y, object_pose.position.z};
+            ROS_INFO("Object position: %f, %f, %f", object_position[0], object_position[1], object_position[2]);
+            
+            // set pose target (to change angle of the FLAT gripper, change the Y in RPY) - 'panda_arm' as planning group
+            //geometry_msgs::Pose desired_pose = calculate_target_pose(object_position, {45, 90, 45});
+
+
+            geometry_msgs::Pose desired_pose;
+
+            // ask user for horizontal or vertical approach 1 for horizontal 2 for vertical must be either one of these two numbers
+            std::string approach_input;
+            while (true){
+                ROS_INFO("Enter 1 for horizontal approach or 2 for vertical approach: ");
+                std::cin >> approach_input;
+                if(approach_input == "1"){
+                    // horizontal approach
+                    desired_pose = calculate_target_pose(object_position, {0.0, 90.0, 0.0});
+                    break;
+                }else if(approach_input == "2"){
+                    // vertical approach
+                    desired_pose = calculate_target_pose(object_position, {0, 180, 0});
+                    break;
+                }else{
+                    ROS_INFO("Invalid input");
+                }
+            }
+
+            ROS_INFO("Pose Calculated - Press any button to continue");
+            std::cin.ignore();
+
+            plan_and_execute_pose(desired_pose);
+
+            // press any button to return home
+            ROS_INFO("Press any button to return home");
+            std::cin.ignore();
+
+            // reset
+            go_to_home_position();
+            clean_scene();
+            remove_pose_arrow();
+
+            ROS_INFO("Simulation Complete - Press any button to exit");
+            std::cin.ignore();
         
-        // // just the rod no box for testing purposes
-        std::vector<double> rod_position = {box1.at("x_pos"), box1.at("y_pos"), rod_height / 2.0 + box1.at("z_height")};
-        ROS_INFO("Rod position: %f, %f, %f", rod_position[0], rod_position[1], rod_position[2]);
-        
-        // set pose target (to change angle of the FLAT gripper, change the Y in RPY)
-        //geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {45, 90, 45});
-
-        // horizontal approach
-        geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {0, 180, 0});
-
-        // vertical approach
-        // geometry_msgs::Pose desired_pose = calculate_target_pose(rod_position, {0, 180, 0});
-
-
-        //go_to_zero_state();
-
-        // print position of end effector
-        ROS_INFO("End effector position: x = %f, y = %f, z = %f", move_group_interface_arm->getCurrentPose().pose.position.x, move_group_interface_arm->getCurrentPose().pose.position.y, move_group_interface_arm->getCurrentPose().pose.position.z);
-    
-
-        ROS_INFO("Pose Calculated - Press any button to continue");
-        std::cin.ignore();
-
-        plan_and_execute_pose(desired_pose);
-
-        // press any button to return home
-        ROS_INFO("Press any button to return home");
-        std::cin.ignore();
-
-        // reset
-        go_to_home_position();
-        clean_scene();
-        remove_pose_arrow();
-
-        ROS_INFO("Simulation Complete - Press any button to exit");
-        std::cin.ignore();
+        }else{
+            ROS_INFO("Empty scene - For testing purposes - Press any button to Continue");
+            std::cin.ignore();
+        }
    
     }
     
     void PickandPlace::test(){
         writeRobotDetails();
         open_gripper();
-        go_to_zero_state(); 
+        determine_grasp_pose();
         ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
-
-        // determine_grasp_pose();
-        // ROS_INFO("Simulation Complete - Press any button to exit");
-        // std::cin.ignore();
         // remove_pose_arrow();
     }
 
@@ -515,7 +542,7 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // Run pick and place operations
-    pnp.run_basic_pnp();
+    pnp.run();
 
     // Shutdown the node and join the thread back before exiting
     ros::shutdown();
