@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     // add a short sleep so the node can finish initializing
     ros::Duration(0.5).sleep();
 
+    
     // Run pick and place operations
     pnp.run();
 

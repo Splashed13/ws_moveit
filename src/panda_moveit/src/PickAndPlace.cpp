@@ -437,23 +437,19 @@
         do {
             ROS_INFO("Enter RPY in degrees (-180 to 180) separated by space: ");
             std::cin >> ee_rotation[0] >> ee_rotation[1] >> ee_rotation[2];
-        } while (!std::cin.fail() && 
+            std::cin.clear();  // Clear the error flags
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
+        } while (std::cin.fail() || 
                 !(ee_rotation[0] >= -180 && ee_rotation[0] <= 180 &&
                 ee_rotation[1] >= -180 && ee_rotation[1] <= 180 &&
                 ee_rotation[2] >= -180 && ee_rotation[2] <= 180));
 
-        std::cin.clear();  // Clear the error flags
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
-
         do {
             ROS_INFO("Enter position in meters as x y z separated by space: ");
             std::cin >> ee_position[0] >> ee_position[1] >> ee_position[2];
+            std::cin.clear();  // Clear the error flags
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
         } while (std::cin.fail());
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');{
-
-        }
     }
 
 

@@ -1,6 +1,5 @@
 <launch>
     <!-- Copy of demo_gazebo.launch from panda_moveit_config with model spawning added-->
-
     <!-- specify the planning pipeline -->
     <arg name="pipeline" default="ompl" />
 
@@ -29,7 +28,6 @@
     <!-- Spawn the cube model, Scene View, z = table surface z position (0.3) + table surface height/2 (0.009/2) + cube height/2 (0.013/2) = 0.311 -->
     <node name="spawn_cube" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/cube_20k/model.sdf -sdf -model cube_20k -x 0.6 -y 0 -z 0.311" />
-
 
     <include file="$(find panda_moveit)/launch/run_sim.launch" pass_all_args="true">
     <!-- robot description is loaded by gazebo.launch, to enable Gazebo features -->
