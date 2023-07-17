@@ -3,7 +3,7 @@
 #include "../include/panda_moveit/Utilities.hpp"
 
 // Define the namespace to group related code together
-    PickandPlace::PickandPlace() : 
+    PickandPlace::PickandPlace(std::string scene_, std::string approach_) : 
     // identifiers responsible for initializing the declared variables
     nh("pnp"),
     visual_tools("panda_link0")
@@ -19,6 +19,10 @@
 
         // load the planning scene monitor
         visual_tools.loadPlanningSceneMonitor();
+
+        // allocate scene_ and approach_ to declared variables
+        scene = scene_;
+        approach = approach_;
 
     }
 
@@ -105,10 +109,8 @@
     }
 
     
-    void PickandPlace::createCollisionScene(int scene_num)
-    {   
-        scene = scene_num;
-        if(scene == 1){
+    void PickandPlace::createCollisionScene(){   
+        if(scene == "rod"){
             // Floor
             std::vector<double> floor_dimensions = {2.5, 2.5, 0.01};
             std::vector<double> floor_position = {0.0, 0.0, -0.01};
@@ -130,7 +132,7 @@
             createCollisionObjectBox("rod", rod_dimensions, rod_position, 45.0);
             ROS_INFO("Basic Pick and Place scene created");
 
-        }else if(scene == 2){
+        }else if(scene == "cube"){
             // Table 
             std::vector<double> box1_dimensions = {0.2, 0.4, 0.2};
             std::vector<double> box1_position = {0.6, 0, box1_dimensions[2] / 2.0};
@@ -148,17 +150,15 @@
 
     }
 
-    void PickandPlace::clean_scene()
-    {   
+    void PickandPlace::clean_scene(){   
         std::vector<std::string> object_ids;
-        if(scene == 1){
-            object_ids.push_back("floor");
+        if(scene == "rod"){
             object_ids.push_back("box1");
             object_ids.push_back("box2");
             object_ids.push_back("rod");
             planning_scene_interface.removeCollisionObjects(object_ids);
 
-        }else if(scene == 2){
+        }else if(scene == "cube"){
             object_ids.push_back("table");
             object_ids.push_back("cube");
             planning_scene_interface.removeCollisionObjects(object_ids);
@@ -358,7 +358,7 @@
         auto object_poses = planning_scene_interface.getObjectPoses({object_name});   
         if (object_poses.count(object_name) == 0)
         {
-            ROS_ERROR("%s not found in object_poses", object_name.c_str());
+            //ROS_ERROR("%s not found in object_poses", object_name.c_str());
             return false;  // Return an empty vector or some error value
         }
 
@@ -392,7 +392,7 @@
 
     }
 
-    void PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target){
+    bool PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target){
         // set the pose target
         move_group_interface_arm->setPoseTarget(pose_target);
 
@@ -402,19 +402,28 @@
         // print if the arm was able to move to the target pose
         ROS_INFO("Planning to pose target %s", success ? "" : "FAILED");
 
-        ROS_INFO("Visualizing plan as trajectory line");
-        visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
-        visual_tools.trigger();
+        if (success){
+            ROS_INFO("Visualizing plan as trajectory line");
+            visual_tools.publishTrajectoryLine(plan.trajectory_, joint_model_group_arm);
+            visual_tools.trigger();
 
 
-        ROS_INFO("Press any button to travel to target pose");
-        std::cin.ignore();
-        move_group_interface_arm->execute(plan);
-        
-        // clear Sphere and Path namespaces from the visual tools rviz topic
-        visual_tools.deleteAllMarkers();
-        visual_tools.trigger();
+            ROS_INFO("Press any button to travel to target pose");
+            std::cin.ignore();
+            move_group_interface_arm->execute(plan);
+            
+            // clear Sphere and Path namespaces from the visual tools rviz topic
+            visual_tools.deleteAllMarkers();
+            visual_tools.trigger();
 
+            // clear the pose arrow 
+            remove_pose_arrow();
+
+            return true;
+
+        }else{
+            return false;
+        }
 
     }
 
@@ -424,94 +433,81 @@
 
     }
 
+    void PickandPlace::user_input_pose(void){
+        do {
+            ROS_INFO("Enter RPY in degrees (-180 to 180) separated by space: ");
+            std::cin >> ee_rotation[0] >> ee_rotation[1] >> ee_rotation[2];
+        } while (!std::cin.fail() && 
+                !(ee_rotation[0] >= -180 && ee_rotation[0] <= 180 &&
+                ee_rotation[1] >= -180 && ee_rotation[1] <= 180 &&
+                ee_rotation[2] >= -180 && ee_rotation[2] <= 180));
+
+        std::cin.clear();  // Clear the error flags
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
+
+        do {
+            ROS_INFO("Enter position in meters as x y z separated by space: ");
+            std::cin >> ee_position[0] >> ee_position[1] >> ee_position[2];
+        } while (std::cin.fail());
+
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');{
+
+        }
+    }
+
 
     void PickandPlace::run()
     {
+        geometry_msgs::Pose desired_pose;
+
         // Write robot details
         writeRobotDetails();
 
         // open gripper
         open_gripper();
 
-        // get user input for scene must be a number if 1 then scene 1 if 2 then scene 2 else empty scene, ensure a valid input is entered
-        std::string scene_input;
-        while(true){
-            ROS_INFO("Enter scene number (1 or 2) or 0 for no scene: ");
-            std::cin >> scene_input;
-            if(scene_input == "1"){
-                createCollisionScene(1);
-                break;
-            }else if(scene_input == "2"){
-                createCollisionScene(2);
-                break;
-            }else if(scene_input == "0"){
-                break;
+        // create collision scene
+        createCollisionScene();
+
+        do{
+            if(!get_object_pose(scene)){
+                ROS_INFO("Object not found - Enter pose manually");
+                user_input_pose();
+                desired_pose = calculate_target_pose(ee_position, ee_rotation);
+
             }else{
-                ROS_INFO("Invalid input");
-            }
-        }
-
-        if(scene_input != "0"){
-            if(scene_input == "1"){
-                if(!get_object_pose("rod")){
-                    return;
-                }
-
-            }else if(scene_input == "2"){
-                if(!get_object_pose("cube")){
-                    return;
-                }
-            }
-
-            std::vector<double> object_position = {object_pose.position.x, object_pose.position.y, object_pose.position.z};
-            ROS_INFO("Object position: %f, %f, %f", object_position[0], object_position[1], object_position[2]);
+                std::vector<double> object_position = {object_pose.position.x, object_pose.position.y, object_pose.position.z};
+                ROS_INFO("Object position: %f, %f, %f", object_position[0], object_position[1], object_position[2]);
+                
+                // set pose target (to change angle of the FLAT gripper, change the Y in RPY) - 'panda_arm' as planning group
+                //geometry_msgs::Pose desired_pose = calculate_target_pose(object_position, {45, 90, 45});
             
-            // set pose target (to change angle of the FLAT gripper, change the Y in RPY) - 'panda_arm' as planning group
-            //geometry_msgs::Pose desired_pose = calculate_target_pose(object_position, {45, 90, 45});
-
-
-            geometry_msgs::Pose desired_pose;
-
-            // ask user for horizontal or vertical approach 1 for horizontal 2 for vertical must be either one of these two numbers
-            std::string approach_input;
-            while (true){
-                ROS_INFO("Enter 1 for horizontal approach or 2 for vertical approach: ");
-                std::cin >> approach_input;
-                if(approach_input == "1"){
+                if(approach == "horizontal"){
                     // horizontal approach
                     desired_pose = calculate_target_pose(object_position, {0.0, 90.0, 0.0});
-                    break;
-                }else if(approach_input == "2"){
+                }else if(approach == "vertical"){
                     // vertical approach
                     desired_pose = calculate_target_pose(object_position, {0, 180, 0});
-                    break;
-                }else{
-                    ROS_INFO("Invalid input");
                 }
-            }
 
-            ROS_INFO("Pose Calculated - Press any button to continue");
-            std::cin.ignore();
+                ROS_INFO("Pose Calculated - Press any button to continue");
+                std::cin.ignore();
+                }
 
-            plan_and_execute_pose(desired_pose);
+        }while(!plan_and_execute_pose(desired_pose));
 
-            // press any button to return home
-            ROS_INFO("Press any button to return home");
-            std::cin.ignore();
+        // press any button to return home
+        ROS_INFO("Press any button to return home");
+        std::cin.ignore();
 
-            // reset
-            go_to_home_position();
-            clean_scene();
-            remove_pose_arrow();
+        // reset
+        go_to_home_position();
+        clean_scene();
 
-            ROS_INFO("Simulation Complete - Press any button to exit");
-            std::cin.ignore();
-        
-        }else{
-            ROS_INFO("Empty scene - For testing purposes - Press any button to Continue");
-            std::cin.ignore();
-        }
-   
+        ROS_INFO("Simulation Complete - Press any button to exit");
+        std::cin.ignore();
+
     }
     
     void PickandPlace::test(){
@@ -522,30 +518,3 @@
         std::cin.ignore();
         // remove_pose_arrow();
     }
-
-
-
-// ensure main is placed outside the namespace
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "pick_and_place");
-
-    // Instantiate the PickandPlace class
-    PickandPlace pnp;
-
-    // ROS spinning must be running for the MoveGroupInterface to get information
-    // about the robot's state. One way to do this is to start an AsyncSpinner beforehand.
-    ros::AsyncSpinner spinner(5);
-    spinner.start();
-
-    // add a short sleep so the node can finish initializing
-    ros::Duration(0.5).sleep();
-
-    // Run pick and place operations
-    pnp.run();
-
-    // Shutdown the node and join the thread back before exiting
-    ros::shutdown();
-
-    return 0;
-}

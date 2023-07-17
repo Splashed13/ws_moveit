@@ -110,7 +110,7 @@ catkin_install_python(PROGRAMS scripts/pick_and_place.py
 DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 # Pick and Place node
-add_executable(pick_and_place src/PickAndPlace.cpp src/Utilities.cpp)
+add_executable(pick_and_place src/main.cpp src/PickAndPlace.cpp src/Utilities.cpp)
 target_link_libraries(pick_and_place ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 # New point cloud subscriber node

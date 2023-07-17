@@ -25,6 +25,14 @@ private:
     ros::NodeHandle nh;
     ros::Publisher pose_point_pub;
     const double PLANNING_TIME = 15.0;
+    
+    const double gripper_max = 0.04;
+    const double gripper_min = 0.0;
+
+    // rotation max degrees
+    const double rotation_max = 180.0;
+    const double rotation_min = -180.0;
+
     const std::vector<double> OPEN_GRIPPER = {0.035, 0.035};
     const std::vector<double> CLOSE_GRIPPER = {0.011, 0.011};
     const double end_effector_palm_length = 0.058 * 1.8;
@@ -46,25 +54,32 @@ private:
 
     geometry_msgs::Pose object_pose;
 
-    int scene;
+    std::string scene;
+    std::string approach;
+
+
+    std::vector<double> ee_rotation = {0.0, 0.0, 0.0};
+    std::vector<double> ee_position = {0.0, 0.0, 0.0};
 
 public:
-    PickandPlace();
+    PickandPlace(std::string scene_, std::string approach_);
     void writeRobotDetails(void);
     void createCollisionObjectBox(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z);
-    void createCollisionScene(int scene);
+    void createCollisionScene(void);
     void clean_scene(void);
     geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z = 0.0, double pre_approach_distance = 0.0);
     void add_pose_arrow(geometry_msgs::Point point, Eigen::Matrix3d desired_pose_R);
     std::vector<double> get_current_ee_position(void);
-    void plan_and_execute_pose(geometry_msgs::Pose target_pose);
+    bool plan_and_execute_pose(geometry_msgs::Pose target_pose);
     void add_pose_point(geometry_msgs::Point position);
     void determine_grasp_pose(void);
     void remove_pose_arrow(void);
     bool get_object_pose(std::string object_name);
     void go_to_home_position(void);
+    void user_input_pose(void);    
     void go_to_zero_state(void);
     void open_gripper(void);
+
     void run(void);
     void test(void);
 };

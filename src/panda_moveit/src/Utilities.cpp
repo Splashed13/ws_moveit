@@ -2,7 +2,7 @@
 
 Utilities::Utilities(){}
 
-Eigen::Matrix3d Utilities::eulerXYZ_to_rotation_matrix(std::vector<double> euler_angles, bool degrees = true){
+Eigen::Matrix3d Utilities::eulerXYZ_to_rotation_matrix(std::vector<double> euler_angles, bool degrees){
     if (degrees){
         euler_angles[0] = euler_angles[0] * M_PI / 180.0;
         euler_angles[1] = euler_angles[1] * M_PI / 180.0;
