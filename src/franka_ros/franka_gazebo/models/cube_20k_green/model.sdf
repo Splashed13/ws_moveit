@@ -1,27 +1,27 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="cube_20k">
+  <model name="cube_20k_green">
     <link name="link">
-      <pose>0 0 0.311 0 0 0</pose>
+      <pose>0 0 0 0 0 0</pose>
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://cube_20k/meshes/cube_20k.stl</uri>
-            <scale>0.013 0.013 0.013</scale>
+            <uri>model://cube_20k_green/meshes/cube_20k.stl</uri>
+            <scale>0.017 0.017 0.017</scale>
           </mesh>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://cube_20k/meshes/cube_20k.stl</uri>
-            <scale>0.013 0.013 0.013</scale>
+            <uri>model://cube_20k_green/meshes/cube_20k.stl</uri>
+            <scale>0.017 0.017 0.017</scale>
           </mesh>
         </geometry>
        <material>
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
+            <name>Gazebo/Green</name>
           </script>
         </material>
       </visual>

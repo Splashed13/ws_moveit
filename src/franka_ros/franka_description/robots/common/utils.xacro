@@ -250,8 +250,6 @@
       <xacro:macro name="hand_gazebo" params="link">
           <gazebo reference="${link}">
               <material>Gazebo/Grey</material>
-              <mu1>0.2</mu1>
-              <mu2>0.2</mu2>
           </gazebo>
       </xacro:macro>
       <xacro:arm_gazebo link="${arm_id}_link0"/>

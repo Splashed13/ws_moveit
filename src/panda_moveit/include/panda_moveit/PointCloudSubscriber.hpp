@@ -19,4 +19,6 @@ private:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr_;
 
   void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg);
+  
+
 };

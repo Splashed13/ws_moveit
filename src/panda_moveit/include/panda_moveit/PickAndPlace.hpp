@@ -57,6 +57,9 @@ private:
     std::string scene;
     std::string approach;
 
+    // target orientation of the end effector
+    geometry_msgs::Quaternion starting_orientation;
+
 
     std::vector<double> ee_rotation = {0.0, 0.0, 0.0};
     std::vector<double> ee_position = {0.0, 0.0, 0.0};
@@ -78,7 +81,11 @@ public:
     void go_to_home_position(void);
     void user_input_pose(void);    
     void go_to_zero_state(void);
+
     void open_gripper(void);
+    bool close_gripper(std::vector<double> gripper_width);
+    
+    bool pick(std::vector<double> position, std::vector<double> gripper_width);
 
     void run(void);
     void test(void);

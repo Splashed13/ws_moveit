@@ -59,7 +59,7 @@ class PointCloudBoundingBox(object):
             coord_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
             #o3d.visualization.draw_geometries([cube_pcd, coord_frame, bbox])
             # o3d.visualization.draw_geometries([cropped_pcd, coord_frame])
-            o3d.visualization.draw_geometries([self.pcd, coord_frame,bbox])
+            o3d.visualization.draw_geometries([self.pcd, coord_frame,bbox]) # type: ignore
 
         return bbox.get_center()
 

@@ -62,6 +62,8 @@
         // assign the joint model group of panda arm to declared raw pointer
         joint_model_group_arm = move_group_interface_arm->getCurrentState()->getJointModelGroup(PLANNING_GROUP_ARM);
 
+        starting_orientation = move_group_interface_arm->getCurrentPose().pose.orientation;
+
 
     }
 
@@ -315,13 +317,13 @@
         homogeneous_mat_object(2, 3) = 0.7206;
 
         // create homogeneous transformation matrix for the object relative to the arm base
-        Eigen::Matrix4d homogeneous_mat_object_arm = homogeneous_mat_cam * homogeneous_mat_object.inverse();
+        Eigen::Matrix4d homogeneous_mat_base_object = homogeneous_mat_cam * homogeneous_mat_object;
 
         // retrieve point object from homogeneous transformation matrix
         geometry_msgs::Point position;
-        position.x = homogeneous_mat_object_arm(0, 3);
-        position.y = homogeneous_mat_object_arm(1, 3);
-        position.z = homogeneous_mat_object_arm(2, 3);
+        position.x = homogeneous_mat_base_object(0, 3);
+        position.y = homogeneous_mat_base_object(1, 3);
+        position.z = homogeneous_mat_base_object(2, 3);
 
         // print the position of the object relative to the arm base
         ROS_INFO("Object position relative to the arm base: x = %f, y = %f, z = %f", position.x, position.y, position.z);
@@ -408,8 +410,8 @@
             visual_tools.trigger();
 
 
-            ROS_INFO("Press any button to travel to target pose");
-            std::cin.ignore();
+            // ROS_INFO("Press any button to travel to target pose");
+            // std::cin.ignore();
             move_group_interface_arm->execute(plan);
             
             // clear Sphere and Path namespaces from the visual tools rviz topic
@@ -417,7 +419,7 @@
             visual_tools.trigger();
 
             // clear the pose arrow 
-            remove_pose_arrow();
+            //remove_pose_arrow();
 
             return true;
 
@@ -426,12 +428,56 @@
         }
 
     }
+    
+    // pick with hardcoded values first cube dimensions 0.013 x 0.013 x 0.013
+    bool PickandPlace::pick(std::vector<double> position, std::vector<double> gripper_width){
+
+        geometry_msgs::Pose target_pose;
+
+        target_pose.orientation = starting_orientation;
+        target_pose.position.x = position[0];
+        target_pose.position.y = position[1];
+        target_pose.position.z = position[2] + 0.01; // can have position[2]+value to have ee arrive higher above object
+
+        if(!plan_and_execute_pose(target_pose)){
+            return false;
+        }
+        if(!close_gripper(gripper_width)){
+            return false;
+        }
+
+        // press any button to continue
+        ROS_INFO("Closed Gripper press any button to raise cube");
+        std::cin.ignore();
+
+        // lift cube up by 5cm
+        target_pose.position.z = position[2] + 0.05; 
+
+        if(!plan_and_execute_pose(target_pose)){
+            return false;
+        }
+
+        return true;
+           
+    }
+
+    bool PickandPlace::close_gripper(std::vector<double> gripper_width){
+        // Set the joint value target for the gripper
+        move_group_interface_gripper->setJointValueTarget(gripper_width);
+        bool success = (move_group_interface_gripper->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        ROS_INFO("Closing gripper %s", success ? "" : "FAILED");
+        move_group_interface_gripper->move();
+
+        return success;
+    }
 
     std::vector<double> PickandPlace::get_current_ee_position(void){
 
         return {move_group_interface_arm->getCurrentPose().pose.position.x, move_group_interface_arm->getCurrentPose().pose.position.y, move_group_interface_arm->getCurrentPose().pose.position.z};
 
     }
+
+    
 
     void PickandPlace::user_input_pose(void){
         do {
@@ -451,6 +497,7 @@
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
         } while (std::cin.fail());
     }
+
 
 
     void PickandPlace::run()
@@ -509,8 +556,18 @@
     void PickandPlace::test(){
         writeRobotDetails();
         open_gripper();
-        determine_grasp_pose();
+
+        // test without collision scene 
+        std::vector<double> position = {0.6, 0.0, 0.311};
+        std::vector<double> gripper_width = {0.011, 0.011};  // {0.0065, 0.0065};
+
+        if(pick(position, gripper_width)){
+            ROS_INFO("Pick successful");
+        }else{
+            ROS_INFO("Pick failed");
+        }
+
+        // determine_grasp_pose();
         ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
-        // remove_pose_arrow();
     }

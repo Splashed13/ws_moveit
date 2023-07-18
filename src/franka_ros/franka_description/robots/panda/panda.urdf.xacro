@@ -34,11 +34,16 @@
                       rpy="$(arg rpy)">
   </xacro:franka_robot>
 
- <!-- Scene view (D435 optimal range 0.3m-10m) [Comment out when running roslaunch panda_moveit run_sim.launch]-->
- <!-- <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>
+
+  <xacro:panda_gazebo arm_id="$(arg arm_id)" />
+
+<!-- Scene view (D435 optimal range 0.3m-10m) -->
+<xacro:if value="$(optenv INCLUDE_D435_CAMERA false)">
+  <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>
   <xacro:sensor_d435  parent="panda_link0" name="D435_camera1" topics_ns="D435_camera1" align_depth="true" visualize="true" enable_pointCloud="true" clip_distance="10">
     <origin xyz="0.0 0.4 0.425" rpy="0.0 0.26 -0.58875"/>
- </xacro:sensor_d435> -->
+  </xacro:sensor_d435>
+</xacro:if>
 
  <!-- Scene view (D435 optimal range 0.3m-10m) [Comment out when running roslaunch panda_moveit run_sim.launch]-->
  <!-- <xacro:include filename="$(find realsense_gazebo_description)/urdf/_d435.urdf.xacro"/>

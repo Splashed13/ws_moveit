@@ -22,12 +22,28 @@
     </include>
 
     <!-- Spawn the table model -x 0.6 for scene view-->
-    <node name="spawn_table" pkg="gazebo_ros" type="spawn_model" 
-    args="-file $(find franka_gazebo)/models/wooden_table/model.sdf -sdf -model table -x 0.6 -y 0 -z 0 -R 0 -P 0 -Y 1.5707"/>
+    <node name="spawn_table1" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/wooden_table1/model.sdf -sdf -model table1 -x 0.6 -y 0 -z 0 -R 0 -P 0 -Y 1.5707"/>
+
+    <node name="spawn_table2" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/wooden_table2/model.sdf -sdf -model table2 -x 0.0 -y 0.6 -z 0 -R 0 -P 0 -Y 0"/>
+
+    <node name="spawn_bowl" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/bowl/model.sdf -sdf -model bowl -x 0.0 -y 0.6 -z 0.322 -R 0 -P 0 -Y 0"/>
+
 
     <!-- Spawn the cube model, Scene View, z = table surface z position (0.3) + table surface height/2 (0.009/2) + cube height/2 (0.013/2) = 0.311 -->
-    <node name="spawn_cube" pkg="gazebo_ros" type="spawn_model" 
-    args="-file $(find franka_gazebo)/models/cube_20k/model.sdf -sdf -model cube_20k -x 0.6 -y 0 -z 0.311" />
+    <node name="spawn_cube1" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/cube_20k_red1/model.sdf -sdf -model cube_20k_red1 -x 0.6 -y 0 -z 0.311" />
+
+
+    <node name="spawn_cube2" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/cube_20k_red2/model.sdf -sdf -model cube_20k_red2 -x 0.6 -y 0.1 -z 0.3145" />
+
+    
+    <node name="spawn_cube3" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/cube_20k_green/model.sdf -sdf -model cube_20k_green -x 0.6 -y -0.1 -z 0.313" />
+
 
     <include file="$(find panda_moveit)/launch/run_sim.launch" pass_all_args="true">
     <!-- robot description is loaded by gazebo.launch, to enable Gazebo features -->

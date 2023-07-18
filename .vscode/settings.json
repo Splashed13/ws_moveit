@@ -80,5 +80,6 @@
     "python.analysis.extraPaths": [
         "./devel/lib/python3/dist-packages"
     ],
-    "C_Cpp.default.compilerPath": "/usr/bin/cpp"
+    "C_Cpp.default.compilerPath": "/usr/bin/cpp",
+    "cmake.configureOnOpen": false
 }
