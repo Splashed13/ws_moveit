@@ -30,6 +30,8 @@ find_package(catkin REQUIRED COMPONENTS
   realsense_gazebo_description
   pcl_conversions
   pcl_ros
+  actionlib
+  franka_gripper
   #realsense2_description
 )
 
@@ -89,6 +91,8 @@ catkin_package(
     sensor_msgs 
     moveit_commander
     realsense_gazebo_description
+    actionlib
+    franka_gripper
     #realsense2_description
     pcl_conversions
     pcl_ros

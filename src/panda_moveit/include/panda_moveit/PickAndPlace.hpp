@@ -18,12 +18,19 @@
 #include <moveit_msgs/DisplayRobotState.h>
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <actionlib/client/simple_action_client.h>
+#include <franka_gripper/GraspAction.h>
 
 class PickandPlace
 {
 private:
     ros::NodeHandle nh;
     ros::Publisher pose_point_pub;
+
+    // Add an action client for the franka_gripper grasp action
+    actionlib::SimpleActionClient<franka_gripper::GraspAction> grasp_action_client;
+
+
     const double PLANNING_TIME = 15.0;
     
     const double gripper_max = 0.04;
@@ -64,6 +71,13 @@ private:
     std::vector<double> ee_rotation = {0.0, 0.0, 0.0};
     std::vector<double> ee_position = {0.0, 0.0, 0.0};
 
+    // map of gazebo cube positions, key is name of the cube, value is a vector of doubles 
+    std::map<std::string, std::vector<double>> cube_information = {
+        {"cube1", {0.6, 0.0, 0.317, 0.024, 10}},
+        {"cube2", {0.6, 0.1, 0.3195, 0.029, 10}},
+        {"cube3", {0.6, -0.1, 0.3155, 0.021, 10}}
+    };
+
 public:
     PickandPlace(std::string scene_, std::string approach_);
     void writeRobotDetails(void);
@@ -71,7 +85,7 @@ public:
     void createCollisionScene(void);
     void clean_scene(void);
     geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z = 0.0, double pre_approach_distance = 0.0);
-    void add_pose_arrow(geometry_msgs::Point point, Eigen::Matrix3d desired_pose_R);
+    void add_pose_arrow(geometry_msgs::Pose target_pose);
     std::vector<double> get_current_ee_position(void);
     bool plan_and_execute_pose(geometry_msgs::Pose target_pose);
     void add_pose_point(geometry_msgs::Point position);
@@ -81,11 +95,13 @@ public:
     void go_to_home_position(void);
     void user_input_pose(void);    
     void go_to_zero_state(void);
+    bool send_grasp_goal(double width, double epsilon_inner, double epsilon_outer, double speed, double force);
 
     void open_gripper(void);
     bool close_gripper(std::vector<double> gripper_width);
     
-    bool pick(std::vector<double> position, std::vector<double> gripper_width);
+    bool pick(std::vector<double> position, double z_offset, double width, double speed, double force);
+    bool place(void);   
 
     void run(void);
     void test(void);

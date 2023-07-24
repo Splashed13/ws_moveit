@@ -6,7 +6,8 @@
     PickandPlace::PickandPlace(std::string scene_, std::string approach_) : 
     // identifiers responsible for initializing the declared variables
     nh("pnp"),
-    visual_tools("panda_link0")
+    visual_tools("panda_link0"),
+    grasp_action_client("/franka_gripper/grasp", true)
     {    
         // Set up a publisher for the pose point visualization marker
         pose_point_pub = nh.advertise<visualization_msgs::Marker>("pose_point", 10);
@@ -64,6 +65,8 @@
 
         starting_orientation = move_group_interface_arm->getCurrentPose().pose.orientation;
 
+        // move_group_interface_arm->setPlannerId("RRTConnectkConfigDefault");
+      
 
     }
 
@@ -175,7 +178,7 @@
     geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z, double pre_approach_distance)
     {   
         Eigen::Matrix4d homogeneous_mat;
-        Eigen::Matrix3d arrow_rotation;
+        // Eigen::Matrix3d arrow_rotation;
         // rotation is about the relative frame of the end effector
         Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
         homogeneous_mat_arm.block<3, 3>(0, 0) = Utilities::eulerXYZ_to_rotation_matrix(rotation);
@@ -183,44 +186,26 @@
         homogeneous_mat_arm(1, 3) = translation[1];
         homogeneous_mat_arm(2, 3) = translation[2];
 
-        arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0);
+        // arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0);
 
         // if planning group arm is panda_arm
         if(PLANNING_GROUP_ARM == "panda_arm"){
             // Create a homogeneous translation matrix to account for the end effector (use when using panda arm)
             Eigen::Matrix4d homogeneous_trans_end_effector = Eigen::Matrix4d::Identity();
-            homogeneous_trans_end_effector(2, 3) = end_effector_palm_length;
+            homogeneous_trans_end_effector(2, 3) = end_effector_palm_length + pre_approach_distance;
             homogeneous_mat = homogeneous_mat_arm * homogeneous_trans_end_effector.inverse(); 
 
         }else{
             Eigen::Matrix4d homogeneous_end_effector = Eigen::Matrix4d::Identity();
-
-            if (rotation[1] == 90.0) {
-                homogeneous_end_effector.block<3, 3>(0, 0) = (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitX())).toRotationMatrix();
-                homogeneous_end_effector(2, 3) = pre_approach_distance; // arbitrary pre-grasp distance
-                ROS_INFO("Horizontal approach");
-                
-                // for pose arrow to point in the correct direction
-                arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0) * (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-
-            }else if (rotation[1] == 180.0) {
-                // if pitch is 180 degrees (vertical), yaw the gripper around z-axis
-                homogeneous_end_effector.block<3, 3>(0, 0) = (Eigen::AngleAxisd(ee_rotation_world_z*M_PI/180.0, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-                homogeneous_end_effector(2, 3) = pre_approach_distance; // arbitrary pre-grasp distance
-                ROS_INFO("Vertical approach");
-            
-            }else{
-                homogeneous_end_effector(2, 3) = pre_approach_distance;
-            }
-
+            homogeneous_end_effector(2, 3) = pre_approach_distance;
             homogeneous_mat = homogeneous_mat_arm * homogeneous_end_effector.inverse();    
-
         }
+        
         // Convert the homogeneous transformation matrix to a pose
         geometry_msgs::Pose pose_target = Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
 
         // add desired pose arrow
-        add_pose_arrow(pose_target.position, arrow_rotation);
+        add_pose_arrow(pose_target);
         
         return pose_target;
     }
@@ -249,7 +234,12 @@
         ROS_INFO("Added pose point");
     }
 
-    void PickandPlace::add_pose_arrow(geometry_msgs::Point point, Eigen::Matrix3d desired_pose_R)
+    // The main adjustment here is in the rotation of the arrow marker. 
+    // First, the target pose's orientation is converted to an Eigen quaternion. 
+    // Then a rotation quaternion is created for a -90 degree rotation around the y-axis. 
+    // Finally, the marker's orientation quaternion is obtained by multiplying the end effector's quaternion by the rotation quaternion. 
+    // The resulting quaternion is then converted back to a geometry_msgs/Quaternion and set as the marker's orientation.
+    void PickandPlace::add_pose_arrow(geometry_msgs::Pose target_pose)
     {
         // Publish a marker at the desired pose
         visualization_msgs::Marker marker;
@@ -266,39 +256,30 @@
         marker.color.b = 1.0;
         marker.color.a = 1.0;
 
-        // rotation of arrow to align with palm frame with respect to the world frame
-        Eigen::Matrix3d arrow_to_palm = Utilities::eulerXYZ_to_rotation_matrix({0.0, -90.0, 0.0});
-
-        // multiply the homogeneous transformation matrix of the arrow by the homogeneous transformation matrix of the end effector
-        Eigen::Matrix3d arrow_rot = arrow_to_palm * desired_pose_R;
-
-        // convert rotation matrix to quaternion
-        tf2::Quaternion quaternion;
-        Eigen::Quaterniond eigen_quat(arrow_rot);
-        tf2::convert(tf2::toMsg(eigen_quat), quaternion);
-
-        // retrieve pose from homogeneous matrix
-        geometry_msgs::Pose pose;
-        pose.position = point;
-
-        // set orientation of arrow
-        pose.orientation = tf2::toMsg(quaternion);
+        // Adjust the orientation of the arrow to align with the end effector
+        Eigen::Quaterniond q_end_effector(target_pose.orientation.w, target_pose.orientation.x, target_pose.orientation.y, target_pose.orientation.z);
+        Eigen::Quaterniond q_rotation(Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()));  // -90 degrees around y-axis
+        Eigen::Quaterniond q_marker = q_end_effector * q_rotation;
+        target_pose.orientation.w = q_marker.w();
+        target_pose.orientation.x = q_marker.x();
+        target_pose.orientation.y = q_marker.y();
+        target_pose.orientation.z = q_marker.z();
 
         // Adjust the position of the arrow to make it end at the pose position
+        Eigen::Matrix3d arrow_rot = q_marker.toRotationMatrix();
         Eigen::Vector3d displacement = arrow_rot.col(0) * end_effector_palm_length; // displacement along x-axis
-        pose.position.x -= displacement.x();
-        pose.position.y -= displacement.y();
-        pose.position.z -= displacement.z();
+        target_pose.position.x -= displacement.x();
+        target_pose.position.y -= displacement.y();
+        target_pose.position.z -= displacement.z();
 
         // set pose of arrow
-        marker.pose = pose;
+        marker.pose = target_pose;
         
         // Publish the marker
         pose_point_pub.publish(marker);
 
         // print pose arrow successfully published
         ROS_INFO("Pose arrow successfully published");
-
     }
 
     void PickandPlace::determine_grasp_pose()
@@ -419,7 +400,7 @@
             visual_tools.trigger();
 
             // clear the pose arrow 
-            //remove_pose_arrow();
+            // remove_pose_arrow();
 
             return true;
 
@@ -430,36 +411,128 @@
     }
     
     // pick with hardcoded values first cube dimensions 0.013 x 0.013 x 0.013
-    bool PickandPlace::pick(std::vector<double> position, std::vector<double> gripper_width){
+    bool PickandPlace::pick(std::vector<double> position, double z_offset, double width, double speed, double force){
 
         geometry_msgs::Pose target_pose;
-
+        // pre grasp
         target_pose.orientation = starting_orientation;
         target_pose.position.x = position[0];
         target_pose.position.y = position[1];
-        target_pose.position.z = position[2] + 0.01; // can have position[2]+value to have ee arrive higher above object
+        target_pose.position.z = position[2] + 0.1;
+        
+        if(!plan_and_execute_pose(target_pose)){
+            return false;
+        }
+
+        // target_pose.orientation = starting_orientation;
+        // target_pose.position.x = position[0];
+        // target_pose.position.y = position[1];
+
+        // grasp
+        target_pose.position.z = position[2] + z_offset; // can have position[2]+value to have ee arrive higher above object default? (0.01)
+
+        double epsilon_inner = 0.005;
+        double epsilon_outer = 0.005;
 
         if(!plan_and_execute_pose(target_pose)){
             return false;
         }
-        if(!close_gripper(gripper_width)){
+        if(!send_grasp_goal(width, epsilon_inner, epsilon_outer, speed, force)){     // stone: 0.03, 0.1 -speed , 10N
             return false;
         }
 
-        // press any button to continue
-        ROS_INFO("Closed Gripper press any button to raise cube");
-        std::cin.ignore();
-
-        // lift cube up by 5cm
-        target_pose.position.z = position[2] + 0.05; 
+        // lift cube up by 0.15m
+        target_pose.position.z = position[2] + 0.15; 
 
         if(!plan_and_execute_pose(target_pose)){
             return false;
         }
 
         return true;
+
+        // put into chatgpt if necessary 
+        // control_msgs::GripperCommandAction(width, max_effort): 
+        // This is a standard gripper action recognized by MoveIt!, a ROS package for motion planning. 
+        // If the max_effort parameter is greater than zero, 
+        // the gripper will try to grasp an object of the desired width. If max_effort is zero, 
+        // the gripper will just move to the desired width without attempting to grasp anything.
            
     }
+
+    bool PickandPlace::place(){
+        // set pose position to the table2 position plus a height of 0.01m (0.0, 0.6, 0.322 + 0.01) and 
+        // have the gripper rotated 90 degrees about it starting orientation z-axis
+        geometry_msgs::Pose target_pose;
+
+        // First, set the position
+        target_pose.position.x = 0.0;
+        target_pose.position.y = 0.6;
+        target_pose.position.z = 0.322 + 0.15;
+
+        // Then, set the orientation. First, convert the 90 degrees rotation about the Z-axis to radians.
+        double theta = -90.0 * M_PI / 180.0; // You might need to include <math.h> for M_PI
+
+        // Now, use the quaternion representation for a rotation about the Z-axis.
+        // Assuming that starting_orientation is a quaternion representing the initial orientation
+        tf2::Quaternion q_starting(starting_orientation.x, starting_orientation.y, starting_orientation.z, starting_orientation.w);
+
+        // Create a quaternion representing the rotation around the Z-axis
+        tf2::Quaternion q_rot;
+        q_rot.setRPY(0, 0, theta);
+
+        // The final orientation is the product of the initial orientation and the rotation
+        // Note that quaternion multiplication is not commutative. The order of multiplication matters. 
+        // In this case, q_starting * q_rot results in a rotation of q_rot in the coordinate frame of q_starting. 
+        // If you want to rotate in the world coordinate frame, you should reverse the multiplication order.
+        tf2::Quaternion q_final = q_starting * q_rot;
+
+        target_pose.orientation.x = q_final.x();
+        target_pose.orientation.y = q_final.y();
+        target_pose.orientation.z = q_final.z();
+        target_pose.orientation.w = q_final.w();
+
+        // move to target pose
+        if(!plan_and_execute_pose(target_pose)){
+            return false;
+        }
+
+        // open gripper
+        open_gripper();
+
+        return true;
+
+    }
+
+    bool PickandPlace::send_grasp_goal(double width, double epsilon_inner, double epsilon_outer, double speed, double force)
+    {
+        franka_gripper::GraspGoal goal;
+
+        // Fill in goal (adjust according to your needs)
+        goal.width = width;
+        goal.epsilon.inner = epsilon_inner;
+        goal.epsilon.outer = epsilon_outer;
+        goal.speed = speed;
+        goal.force = force;
+
+        // Send goal
+        grasp_action_client.sendGoal(goal);
+
+        // Wait for the action to return
+        bool finished = grasp_action_client.waitForResult(ros::Duration(30.0));
+
+        if (finished)
+        {
+            actionlib::SimpleClientGoalState state = grasp_action_client.getState();
+            ROS_INFO("Action finished: %s", state.toString().c_str());
+            return true;
+        }
+        else
+        {
+            ROS_INFO("Action did not finish before the time out.");
+            return false;
+        }
+    }
+
 
     bool PickandPlace::close_gripper(std::vector<double> gripper_width){
         // Set the joint value target for the gripper
@@ -531,7 +604,7 @@
                     desired_pose = calculate_target_pose(object_position, {0.0, 90.0, 0.0});
                 }else if(approach == "vertical"){
                     // vertical approach
-                    desired_pose = calculate_target_pose(object_position, {0, 180, 0});
+                    desired_pose = calculate_target_pose(object_position, {180.0, 0, 0});
                 }
 
                 ROS_INFO("Pose Calculated - Press any button to continue");
@@ -557,14 +630,24 @@
         writeRobotDetails();
         open_gripper();
 
-        // test without collision scene 
-        std::vector<double> position = {0.6, 0.0, 0.311};
-        std::vector<double> gripper_width = {0.011, 0.011};  // {0.0065, 0.0065};
+        // Iterate over cube_information map
+        for(const auto& item : cube_information) { 
+            // item.first is the key (i.e., "cube1", "cube2", "cube3")
+            // item.second is the value (i.e., the vector of doubles)
 
-        if(pick(position, gripper_width)){
-            ROS_INFO("Pick successful");
-        }else{
-            ROS_INFO("Pick failed");
+            const std::vector<double>& value = item.second;
+
+            if(pick({value[0],value[1],value[2]}, 0.001, value[3], 0.1, value[4])){ //0.0025
+                ROS_INFO("Pick successful for %s", item.first.c_str());
+            }else{
+                ROS_INFO("Pick failed for %s", item.first.c_str());
+            }
+
+            if(place()){
+                ROS_INFO("Place successful for %s", item.first.c_str());
+            }else{
+                ROS_INFO("Place failed for %s", item.first.c_str());
+            }
         }
 
         // determine_grasp_pose();
