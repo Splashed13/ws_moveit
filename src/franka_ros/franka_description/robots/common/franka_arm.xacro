@@ -18,7 +18,7 @@
     <xacro:link_with_sc name="link0" gazebo="${gazebo}">
       <self_collision_geometries>
         <xacro:collision_capsule xyz="-0.075 0 0.06" direction="x" radius="${0.06+safety_distance}" length="0.03" />
-      </self_collision_geometries>
+      </self_collision_geometries>z
     </xacro:link_with_sc>
 
     <xacro:link_with_sc name="link1" gazebo="${gazebo}">
@@ -135,5 +135,19 @@
       <parent link="${arm_id}_link7"/>
       <child link="${arm_id}_link8"/>
     </joint>
+
+    <!-- if gazebo arguement is true add interial properties using xacro macro for link 0-7 -->
+    <xacro:if value="${gazebo}">
+      <xacro:inertial_props name="link0"/>
+      <xacro:inertial_props name="link1"/>
+      <xacro:inertial_props name="link2"/>
+      <xacro:inertial_props name="link3"/>
+      <xacro:inertial_props name="link4"/>
+      <xacro:inertial_props name="link5"/>
+      <xacro:inertial_props name="link6"/>
+      <xacro:inertial_props name="link7"/>
+    </xacro:if>
+
+
   </xacro:macro>
 </robot>

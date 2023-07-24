@@ -17,6 +17,11 @@
       </self_collision_geometries>
     </xacro:link_with_sc>
 
+    <xacro:if value="${gazebo}">
+        <xacro:inertial_props name="hand" />
+    </xacro:if>
+    
+
     <!-- Define the hand_tcp frame -->
     <link name="${arm_id}_hand_tcp" />
     <joint name="${arm_id}_hand_tcp_joint" type="fixed">
