@@ -27,6 +27,10 @@
   <!-- Use rviz config for MoveIt tutorial -->
   <arg name="rviz_tutorial" default="false" />
 
+  <!-- Other Arguements -->
+  <arg name="sensor_type" default="" />
+  <arg name="use_camera" default="false" />
+
   <!-- If needed, broadcast static tf for robot root -->
   <node pkg="tf2_ros" type="static_transform_publisher" name="virtual_joint_broadcaster_0" args="0 0 0 0 0 0 world $(arg arm_id)_link0" />
 

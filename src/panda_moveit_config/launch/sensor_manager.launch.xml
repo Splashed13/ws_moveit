@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Params for 3D sensors config: '' | pointcloud | depthmap -->
-  <arg name="sensor_type" default="pointcloud" />
+  <arg name="sensor_type" default="" />
   <rosparam if="$(eval arg('sensor_type')  != '')" command="load" file="$(find panda_moveit_config)/config/sensors_d435_$(arg sensor_type).yaml" />
 
   <!-- Params for the octomap monitor -->

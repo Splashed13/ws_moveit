@@ -1,5 +1,6 @@
 <launch>
     <!-- Copy of demo_gazebo.launch from panda_moveit_config with model spawning added-->
+
     <!-- specify the planning pipeline -->
     <arg name="pipeline" default="ompl" />
 
@@ -11,8 +12,10 @@
     <arg name="gazebo_gui" default="true" />
     <arg name="paused" default="false" />
 
-    <!-- Set the GAZEBO_MODEL_PATH environment variable -->
-    <env name="GAZEBO_MODEL_PATH" value="$(optenv GAZEBO_MODEL_PATH):$(find franka_gazebo)/models"/>
+    <!-- other arguments -->
+    <arg name="sensor_type" default="" />
+    <arg name="spawn_objects" default="true" />
+    <arg name="use_camera" default="false" />
 
     <!-- Launch the gazebo simulator and spawn the robot -->
     <include file="$(find franka_gazebo)/launch/panda.launch" pass_all_args="true">
@@ -21,32 +24,28 @@
     <arg name="controller" default="$(arg transmission)_joint_trajectory_controller" />
     </include>
 
+    <!-- Set the GAZEBO_MODEL_PATH environment variable -->
+    <env name="GAZEBO_MODEL_PATH" value="$(optenv GAZEBO_MODEL_PATH):$(find franka_gazebo)/models"/>
+
     <!-- Spawn the table model -x 0.6 for scene view-->
-    <node name="spawn_table1" pkg="gazebo_ros" type="spawn_model" 
+    <node if="$(arg spawn_objects)" name="spawn_table1" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/wooden_table1/model.sdf -sdf -model table1 -x 0.6 -y 0 -z 0 -R 0 -P 0 -Y 1.5707"/>
 
-    <node name="spawn_table2" pkg="gazebo_ros" type="spawn_model" 
+    <node if="$(arg spawn_objects)" name="spawn_table2" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/wooden_table2/model.sdf -sdf -model table2 -x 0.0 -y 0.6 -z 0 -R 0 -P 0 -Y 0"/>
 
-    <node name="spawn_bowl" pkg="gazebo_ros" type="spawn_model" 
-    args="-file $(find franka_gazebo)/models/bowl/model.sdf -sdf -model bowl -x 0.0 -y 0.6 -z 0.322 -R 0 -P 0 -Y 0"/>
+    <!-- Spawn the object model, z = table surface z position (0.3) + table surface height/2 (0.009/2) + object_height/2 = z value -->
+    <node if="$(arg spawn_objects)" name="spawn_bowl" pkg="gazebo_ros" type="spawn_model" 
+    args="-file $(find franka_gazebo)/models/bowl/model.sdf -sdf -model bowl -x 0.0 -y 0.6 -z 0.3045 -R 0 -P 0 -Y 0"/>
 
-
-    <!-- Spawn the cube model, Scene View, z = table surface z position (0.3) + table surface height/2 (0.009/2) + cube height/2 (0.013/2) = 0.311 -->
-    <!-- <node name="spawn_cube1" pkg="gazebo_ros" type="spawn_model" 
-    args="-file $(find franka_gazebo)/models/cube_20k_red1/model.sdf -sdf -model cube_20k_red1 -x 0.6 -y 0 -z 0.311" /> -->
-
-    <node name="spawn_cube1" pkg="gazebo_ros" type="spawn_model" 
+    <node if="$(arg spawn_objects)" name="spawn_cube1" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/stone1/model.sdf -sdf -model stone1 -x 0.6 -y 0 -z 0.317" />
 
-
-    <node name="spawn_cube2" pkg="gazebo_ros" type="spawn_model" 
+    <node if="$(arg spawn_objects)" name="spawn_cube2" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/stone2/model.sdf -sdf -model stone2 -x 0.6 -y 0.1 -z 0.3195" />
 
-    
-    <node name="spawn_cube3" pkg="gazebo_ros" type="spawn_model" 
+    <node if="$(arg spawn_objects)" name="spawn_cube3" pkg="gazebo_ros" type="spawn_model" 
     args="-file $(find franka_gazebo)/models/stone3/model.sdf -sdf -model stone3 -x 0.6 -y -0.1 -z 0.3155" />
-
 
     <include file="$(find panda_moveit)/launch/run_sim.launch" pass_all_args="true">
     <!-- robot description is loaded by gazebo.launch, to enable Gazebo features -->

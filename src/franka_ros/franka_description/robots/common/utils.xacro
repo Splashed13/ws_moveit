@@ -238,7 +238,8 @@
                          soft_upper_limit="${limits.upper}" />
   </xacro:macro>
 
-  <!-- Colourize the links -->
+  <!-- Colourize the and add friction to the links, the fingers have seperate friction values
+  set with the gazebo-friction macro in the franka_robot.xacro file -->
   <xacro:macro name="panda_gazebo" params="arm_id">
   <xacro:macro name="arm_gazebo" params="link">
           <gazebo reference="${link}">
@@ -248,6 +249,13 @@
           </gazebo>
       </xacro:macro>
       <xacro:macro name="hand_gazebo" params="link">
+          <gazebo reference="${link}">
+              <material>Gazebo/Grey</material>
+              <mu1>0.2</mu1>
+              <mu2>0.2</mu2>
+          </gazebo>
+      </xacro:macro>
+      <xacro:macro name="hand_gazebo_no_friction" params="link">
           <gazebo reference="${link}">
               <material>Gazebo/Grey</material>
           </gazebo>
@@ -262,8 +270,8 @@
       <xacro:hand_gazebo link="${arm_id}_link7"/>
       <xacro:hand_gazebo link="${arm_id}_link8"/>
       <xacro:hand_gazebo link="${arm_id}_hand"/>
-      <xacro:hand_gazebo link="${arm_id}_rightfinger"/>
-      <xacro:hand_gazebo link="${arm_id}_leftfinger"/>
+      <xacro:hand_gazebo_no_friction link="${arm_id}_rightfinger"/>
+      <xacro:hand_gazebo_no_friction link="${arm_id}_leftfinger"/>
   </xacro:macro>
 
 </robot>

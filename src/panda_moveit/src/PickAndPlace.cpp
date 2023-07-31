@@ -470,7 +470,7 @@
         target_pose.position.z = 0.322 + 0.15;
 
         // Then, set the orientation. First, convert the 90 degrees rotation about the Z-axis to radians.
-        double theta = -90.0 * M_PI / 180.0; // You might need to include <math.h> for M_PI
+        double theta = -90.0 * M_PI / 180.0; 
 
         // Now, use the quaternion representation for a rotation about the Z-axis.
         // Assuming that starting_orientation is a quaternion representing the initial orientation
@@ -634,7 +634,6 @@
         for(const auto& item : cube_information) { 
             // item.first is the key (i.e., "cube1", "cube2", "cube3")
             // item.second is the value (i.e., the vector of doubles)
-
             const std::vector<double>& value = item.second;
 
             if(pick({value[0],value[1],value[2]}, 0.001, value[3], 0.1, value[4])){ //0.0025
