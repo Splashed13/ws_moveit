@@ -81,5 +81,6 @@
         "./devel/lib/python3/dist-packages"
     ],
     "C_Cpp.default.compilerPath": "/usr/bin/cpp",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cmake.sourceDirectory": "/home/tho868/Github/ws_moveit/build/catkin_tools_prebuild"
 }

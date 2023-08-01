@@ -3,9 +3,8 @@
 #include "../include/panda_moveit/Utilities.hpp"
 
 // Define the namespace to group related code together
-    PickandPlace::PickandPlace(std::string scene_, std::string approach_) : 
+PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeHandle& nh): 
     // identifiers responsible for initializing the declared variables
-    nh("pnp"),
     visual_tools("panda_link0"),
     grasp_action_client("/franka_gripper/grasp", true)
     {    
@@ -67,7 +66,6 @@
 
         // move_group_interface_arm->setPlannerId("RRTConnectkConfigDefault");
       
-
     }
 
 
@@ -175,31 +173,20 @@
     }
 
 
-    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z, double pre_approach_distance)
-    {   
-        Eigen::Matrix4d homogeneous_mat;
-        // Eigen::Matrix3d arrow_rotation;
-        // rotation is about the relative frame of the end effector
+    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation)
+    {
+        Eigen::Matrix4d homogeneous_mat;           
+        double pre_approach_distance = 0.0;
+
         Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
         homogeneous_mat_arm.block<3, 3>(0, 0) = Utilities::eulerXYZ_to_rotation_matrix(rotation);
         homogeneous_mat_arm(0, 3) = translation[0];
         homogeneous_mat_arm(1, 3) = translation[1];
         homogeneous_mat_arm(2, 3) = translation[2];
 
-        // arrow_rotation = homogeneous_mat_arm.block<3, 3>(0, 0);
+        Eigen::Matrix4d homogeneous_end_effector = Eigen::Matrix4d::Identity();
+        homogeneous_end_effector(2, 3) = pre_approach_distance;
 
-        // if planning group arm is panda_arm
-        if(PLANNING_GROUP_ARM == "panda_arm"){
-            // Create a homogeneous translation matrix to account for the end effector (use when using panda arm)
-            Eigen::Matrix4d homogeneous_trans_end_effector = Eigen::Matrix4d::Identity();
-            homogeneous_trans_end_effector(2, 3) = end_effector_palm_length + pre_approach_distance;
-            homogeneous_mat = homogeneous_mat_arm * homogeneous_trans_end_effector.inverse(); 
-
-        }else{
-            Eigen::Matrix4d homogeneous_end_effector = Eigen::Matrix4d::Identity();
-            homogeneous_end_effector(2, 3) = pre_approach_distance;
-            homogeneous_mat = homogeneous_mat_arm * homogeneous_end_effector.inverse();    
-        }
         
         // Convert the homogeneous transformation matrix to a pose
         geometry_msgs::Pose pose_target = Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
@@ -260,6 +247,7 @@
         Eigen::Quaterniond q_end_effector(target_pose.orientation.w, target_pose.orientation.x, target_pose.orientation.y, target_pose.orientation.z);
         Eigen::Quaterniond q_rotation(Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()));  // -90 degrees around y-axis
         Eigen::Quaterniond q_marker = q_end_effector * q_rotation;
+        q_marker.normalize();
         target_pose.orientation.w = q_marker.w();
         target_pose.orientation.x = q_marker.x();
         target_pose.orientation.y = q_marker.y();
@@ -375,9 +363,17 @@
 
     }
 
-    bool PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target){
-        // set the pose target
-        move_group_interface_arm->setPoseTarget(pose_target);
+    bool PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target, bool relative){
+
+        if(relative){
+            // set the pose target
+            move_group_interface_arm->setPoseReferenceFrame("panda_hand_tcp");
+            move_group_interface_arm->setPoseTarget(pose_target);
+
+        }else{
+            move_group_interface_arm->setPoseReferenceFrame("panda_link0");
+            move_group_interface_arm->setPoseTarget(pose_target);
+        }
 
         // move to arm to the target pose
         bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -400,7 +396,7 @@
             visual_tools.trigger();
 
             // clear the pose arrow 
-            // remove_pose_arrow();
+            remove_pose_arrow();
 
             return true;
 
@@ -419,14 +415,12 @@
         target_pose.position.x = position[0];
         target_pose.position.y = position[1];
         target_pose.position.z = position[2] + 0.1;
+
+        add_pose_arrow(target_pose);
         
         if(!plan_and_execute_pose(target_pose)){
             return false;
         }
-
-        // target_pose.orientation = starting_orientation;
-        // target_pose.position.x = position[0];
-        // target_pose.position.y = position[1];
 
         // grasp
         target_pose.position.z = position[2] + z_offset; // can have position[2]+value to have ee arrive higher above object default? (0.01)
@@ -459,7 +453,7 @@
            
     }
 
-    bool PickandPlace::place(){
+    bool PickandPlace::place(void){
         // set pose position to the table2 position plus a height of 0.01m (0.0, 0.6, 0.322 + 0.01) and 
         // have the gripper rotated 90 degrees about it starting orientation z-axis
         geometry_msgs::Pose target_pose;
@@ -490,6 +484,8 @@
         target_pose.orientation.y = q_final.y();
         target_pose.orientation.z = q_final.z();
         target_pose.orientation.w = q_final.w();
+
+        add_pose_arrow(target_pose);
 
         // move to target pose
         if(!plan_and_execute_pose(target_pose)){
@@ -572,8 +568,7 @@
     }
 
 
-
-    void PickandPlace::run()
+    void PickandPlace::rviz(void)
     {
         geometry_msgs::Pose desired_pose;
 
@@ -626,7 +621,7 @@
 
     }
     
-    void PickandPlace::test(){
+    void PickandPlace::gazebo(void){
         writeRobotDetails();
         open_gripper();
 
@@ -649,7 +644,8 @@
             }
         }
 
-        // determine_grasp_pose();
         ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
     }
+
+    

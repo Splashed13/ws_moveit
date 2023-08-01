@@ -118,6 +118,6 @@ add_executable(pick_and_place src/main.cpp src/PickAndPlace.cpp src/Utilities.cp
 target_link_libraries(pick_and_place ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 # New point cloud subscriber node
-add_executable(point_cloud_subscriber src/PointCloudSubscriber.cpp)
-target_link_libraries(point_cloud_subscriber ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(pcd_writer src/PCDWriter.cpp)
+target_link_libraries(pcd_writer ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 

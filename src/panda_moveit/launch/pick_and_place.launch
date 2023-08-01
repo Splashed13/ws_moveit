@@ -1,0 +1,13 @@
+<launch>
+    <!-- Define arguments -->
+    <!-- gazebo or rod, cube -->
+    <arg name="scene" default="" />    
+    <!-- horizontal or vertical -->
+    <arg name="approach" default="" />
+    <!-- Run the pick_and_place node -->
+    <node pkg="panda_moveit" type="pick_and_place" name="pick_and_place_cpp" output="screen">
+        <!-- Pass the parameters -->
+        <param name="scene" value="$(arg scene)" />
+        <param name="approach" value="$(arg approach)" />
+    </node>
+</launch>

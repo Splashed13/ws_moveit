@@ -51,6 +51,7 @@
   <depend>pcl_ros</depend>
   <depend>actionlib</depend>
   <depend>franka_gripper</depend>
+  <depend>libpcl-all-dev</depend>
 
   <!-- <depend>python-o3d</depend> -->
   <!-- <depend>realsense2_description</depend> -->

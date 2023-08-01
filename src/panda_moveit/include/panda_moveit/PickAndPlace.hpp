@@ -24,7 +24,6 @@
 class PickandPlace
 {
 private:
-    ros::NodeHandle nh;
     ros::Publisher pose_point_pub;
 
     // Add an action client for the franka_gripper grasp action
@@ -44,8 +43,8 @@ private:
     const std::vector<double> CLOSE_GRIPPER = {0.011, 0.011};
     const double end_effector_palm_length = 0.058 * 1.8;
 
-    const std::string PLANNING_GROUP_ARM = "panda_manipulator";
-    const std::string PLANNING_GROUP_GRIPPER = "panda_hand";
+    const std::string PLANNING_GROUP_ARM = "panda_manipulator"; // panda_arm shouldnt be used - check earlier commits if need it
+    const std::string PLANNING_GROUP_GRIPPER = "panda_hand"; 
 
     std::unique_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_arm;
     std::unique_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_gripper;
@@ -72,6 +71,7 @@ private:
     std::vector<double> ee_position = {0.0, 0.0, 0.0};
 
     // map of gazebo cube positions, key is name of the cube, value is a vector of doubles 
+    // containing the x, y, z, width and desired applied force of the gripper
     std::map<std::string, std::vector<double>> cube_information = {
         {"cube1", {0.6, 0.0, 0.317, 0.024, 10}},
         {"cube2", {0.6, 0.1, 0.3195, 0.029, 10}},
@@ -79,15 +79,15 @@ private:
     };
 
 public:
-    PickandPlace(std::string scene_, std::string approach_);
+    PickandPlace(std::string scene_, std::string approach_, ros::NodeHandle& nh);
     void writeRobotDetails(void);
     void createCollisionObjectBox(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z);
     void createCollisionScene(void);
     void clean_scene(void);
-    geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, double ee_rotation_world_z = 0.0, double pre_approach_distance = 0.0);
+    geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation);
     void add_pose_arrow(geometry_msgs::Pose target_pose);
     std::vector<double> get_current_ee_position(void);
-    bool plan_and_execute_pose(geometry_msgs::Pose target_pose);
+    bool plan_and_execute_pose(geometry_msgs::Pose target_pose, bool relative=false);
     void add_pose_point(geometry_msgs::Point position);
     void determine_grasp_pose(void);
     void remove_pose_arrow(void);
@@ -103,6 +103,6 @@ public:
     bool pick(std::vector<double> position, double z_offset, double width, double speed, double force);
     bool place(void);   
 
-    void run(void);
-    void test(void);
+    void rviz(void);
+    void gazebo(void);
 };
