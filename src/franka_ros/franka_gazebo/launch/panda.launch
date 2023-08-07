@@ -17,7 +17,8 @@
   <arg name="roll"        default="0"     doc="How much to rotate the base of the robot around its X-axis in [rad]?" />
   <arg name="pitch"       default="0"     doc="How much to rotate the base of the robot around its Y-axis in [rad]?" />
   <arg name="yaw"         default="0"     doc="How much to rotate the base of the robot around its Z-axis in [rad]?" />
-  <arg name="use_cameras" default="false" doc="Should the scene view camera be started?" />
+  <arg name="use_camera1" default="false" doc="Should the scene view camera be started?" />
+  <arg name="use_camera2" default="false" doc="Should the flange view camera be started?" />
   <arg name="xacro_args"  default=""      doc="Additional arguments to pass to panda.urdf.xacro" />
   <arg name="initial_joint_positions"
        doc="Initial joint configuration of the panda. Specify as a list of name/value pairs in form of '-J [name-of-joint] [value-in-rad]'. Default is a 90 degree bend in the elbow"
@@ -51,7 +52,8 @@
     <arg name="pitch" value="$(arg pitch)" />
     <arg name="yaw" value="$(arg yaw)" />
 
-    <arg name="use_cameras" value="$(arg use_cameras)" />
+    <arg name="use_camera1" value="$(arg use_camera1)" />
+    <arg name="use_camera2" value="$(arg use_camera2)" />
 
     <arg name="xacro_args" value="$(arg xacro_args)" />
     <arg name="initial_joint_positions" value="$(arg initial_joint_positions)" />

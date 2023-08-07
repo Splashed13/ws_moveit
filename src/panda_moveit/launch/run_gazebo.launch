@@ -16,7 +16,8 @@
     <arg name="sensor_type" default="" />
     <arg name="spawn_world1" default="false" />
     <arg name="spawn_world3" default="false" />
-    <arg name="use_camera" default="false" />
+    <arg name="use_camera1" default="false" />
+    <arg name="use_camera2" default="false" />
 
     <!-- Launch the gazebo simulator and spawn the robot -->
     <include file="$(find franka_gazebo)/launch/panda.launch" pass_all_args="true">

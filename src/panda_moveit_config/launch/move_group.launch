@@ -29,7 +29,9 @@
 
   <!-- additional arguments  -->
   <arg name="sensor_type" default="" />
-  <arg name="use_cameras" default="false" />
+  <arg name="use_camera1" default="false" />
+  <arg name="use_camera2" default="false" />
+
 
   <!-- load these non-default MoveGroup capabilities (space seperated) -->
   <!--
@@ -53,7 +55,8 @@
     <arg name="load_robot_description" value="$(arg load_robot_description)" />
     <arg name="load_gripper" value="$(arg load_gripper)" />
     <arg name="arm_id" value="$(arg arm_id)" />
-    <arg name="use_cameras" default="$(arg use_cameras)" />
+    <arg name="use_camera1" default="$(arg use_camera1)" />
+    <arg name="use_camera2" default="$(arg use_camera2)" />
   </include>
 
   <!-- Planning Pipelines -->

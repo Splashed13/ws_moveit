@@ -191,9 +191,6 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         // Convert the homogeneous transformation matrix to a pose
         geometry_msgs::Pose pose_target = Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
 
-        // add desired pose arrow
-        add_pose_arrow(pose_target);
-        
         return pose_target;
     }
 
@@ -226,13 +223,18 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
     // Then a rotation quaternion is created for a -90 degree rotation around the y-axis. 
     // Finally, the marker's orientation quaternion is obtained by multiplying the end effector's quaternion by the rotation quaternion. 
     // The resulting quaternion is then converted back to a geometry_msgs/Quaternion and set as the marker's orientation.
-    void PickandPlace::add_pose_arrow(geometry_msgs::Pose target_pose)
+    void PickandPlace::add_pose_arrow(geometry_msgs::Pose target_pose, bool relative)
     {
         // Publish a marker at the desired pose
         visualization_msgs::Marker marker;
         marker.ns = "arrow";
         marker.id = 0;
-        marker.header.frame_id = "panda_link0";
+        if(relative){
+            marker.header.frame_id = "panda_hand_tcp";
+        }
+        else{
+            marker.header.frame_id = "panda_link0";
+        }
         marker.type = visualization_msgs::Marker::ARROW;
         marker.action = visualization_msgs::Marker::ADD;
         marker.scale.x = end_effector_palm_length;
@@ -369,10 +371,12 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             // set the pose target
             move_group_interface_arm->setPoseReferenceFrame("panda_hand_tcp");
             move_group_interface_arm->setPoseTarget(pose_target);
+            add_pose_arrow(pose_target, true);
 
         }else{
             move_group_interface_arm->setPoseReferenceFrame("panda_link0");
             move_group_interface_arm->setPoseTarget(pose_target);
+            add_pose_arrow(pose_target, false);
         }
 
         // move to arm to the target pose
@@ -415,8 +419,6 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         target_pose.position.x = position[0];
         target_pose.position.y = position[1];
         target_pose.position.z = position[2] + 0.1;
-
-        add_pose_arrow(target_pose);
         
         if(!plan_and_execute_pose(target_pose)){
             return false;
@@ -484,8 +486,6 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         target_pose.orientation.y = q_final.y();
         target_pose.orientation.z = q_final.z();
         target_pose.orientation.w = q_final.w();
-
-        add_pose_arrow(target_pose);
 
         // move to target pose
         if(!plan_and_execute_pose(target_pose)){

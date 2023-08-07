@@ -85,7 +85,7 @@ public:
     void createCollisionScene(void);
     void clean_scene(void);
     geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation);
-    void add_pose_arrow(geometry_msgs::Pose target_pose);
+    void add_pose_arrow(geometry_msgs::Pose target_pose, bool relative=false);
     std::vector<double> get_current_ee_position(void);
     bool plan_and_execute_pose(geometry_msgs::Pose target_pose, bool relative=false);
     void add_pose_point(geometry_msgs::Point position);

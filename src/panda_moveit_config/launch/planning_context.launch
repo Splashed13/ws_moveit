@@ -5,13 +5,14 @@
   <arg name="arm_id" default="panda" />
 
   <!-- additional arguments  -->
-  <arg name="use_cameras" default="false" />
+  <arg name="use_camera1" default="false" />
+  <arg name="use_camera2" default="false" />
 
   <!-- The name of the parameter under which the URDF is loaded -->
   <arg name="robot_description" default="robot_description"/>
 
   <!-- Load universal robot description format (URDF) -->
-  <param name="$(arg robot_description)" command="xacro '$(find franka_description)/robots/panda/panda.urdf.xacro' hand:=$(arg load_gripper) arm_id:=$(arg arm_id) use_cameras:=$(arg use_cameras)" if="$(arg load_robot_description)" />
+  <param name="$(arg robot_description)" command="xacro '$(find franka_description)/robots/panda/panda.urdf.xacro' hand:=$(arg load_gripper) arm_id:=$(arg arm_id) use_camera1:=$(arg use_camera1) use_camera2=$(arg use_camera2)" if="$(arg load_robot_description)" />
 
   <!-- The semantic description that corresponds to the URDF -->
   <param name="$(arg robot_description)_semantic" command="xacro '$(find panda_moveit_config)/config/panda.srdf.xacro' hand:=$(arg load_gripper) arm_id:=$(arg arm_id)" />
