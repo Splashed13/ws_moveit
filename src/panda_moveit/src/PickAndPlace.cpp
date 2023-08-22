@@ -17,12 +17,17 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         // Set the planning time for the arm movement
         move_group_interface_arm->setPlanningTime(PLANNING_TIME);
 
-        // load the planning scene monitor
+        // Fraction of maximum joint velocity and acceleration to be used
+        move_group_interface_arm->setMaxVelocityScalingFactor(0.5);
+
+        // Load the planning scene monitor
         visual_tools.loadPlanningSceneMonitor();
 
-        // allocate scene_ and approach_ to declared variables
+        // Allocate scene_ and approach_ to declared variables
         scene = scene_;
         approach = approach_;
+
+        
 
     }
 
@@ -446,7 +451,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
         return true;
 
-        // put into chatgpt if necessary 
+        // Change implementation if necessary:
         // control_msgs::GripperCommandAction(width, max_effort): 
         // This is a standard gripper action recognized by MoveIt!, a ROS package for motion planning. 
         // If the max_effort parameter is greater than zero, 
@@ -568,6 +573,48 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
     }
 
 
+    bool PickandPlace::move_cartesian_path_z(double z_postition){
+        std::vector<geometry_msgs::Pose> waypoints;
+        geometry_msgs::Pose target_pose = move_group_interface_arm->getCurrentPose().pose;
+        target_pose.position.z += z_postition;
+        waypoints.push_back(target_pose);
+
+        moveit_msgs::RobotTrajectory trajectory;
+        double fraction = move_group_interface_arm->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+        ROS_INFO("Visualizing plan as trajectory line");
+        visual_tools.publishTrajectoryLine(trajectory, joint_model_group_arm);
+        visual_tools.trigger();
+
+        ROS_INFO("Press any button to travel to target pose");
+        std::cin.ignore();
+        move_group_interface_arm->setMaxVelocityScalingFactor(0.25);
+
+        move_group_interface_arm->execute(trajectory);
+
+        move_group_interface_arm->setMaxVelocityScalingFactor(0.5);
+
+        // clear Sphere and Path namespaces from the visual tools rviz topic
+        visual_tools.deleteAllMarkers();
+        visual_tools.trigger();
+
+    }
+
+    bool user_defined_pose_vertical(void)
+    {
+        // get user input for position only 
+        do {
+            ROS_INFO("Enter position in meters as x y z separated by space: ");
+            std::cin >> ee_position[0] >> ee_position[1] >> ee_position[2];
+            std::cin.clear();  // Clear the error flags
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
+        } while (std::cin.fail());
+        
+        geometry_msgs::Pose desired_pose = calculate_target_pose(ee_position, {180.0, 0, 0});
+
+        return plan_and_execute_pose(desired_pose);
+    }
+
+
     void PickandPlace::rviz(void)
     {
         geometry_msgs::Pose desired_pose;
@@ -646,6 +693,32 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
         ROS_INFO("Simulation Complete - Press any button to exit");
         std::cin.ignore();
+    }
+
+    void PickandPlace::testing(void){
+        writeRobotDetails();
+        open_gripper();
+
+        // move just over the cube 
+        geometry_msgs::Pose target_pose;
+        target_pose.orientation = starting_orientation;
+        // get current position 
+        std::vector<double> current_position = get_current_ee_position();
+        target_pose.position.x = 0.6;
+        target_pose.position.y = current_position[1];
+        target_pose.position.z = current_position[2];
+
+        if(!plan_and_execute_pose(target_pose)){
+            ROS_INFO("Failed to move to position");
+        }
+
+        // press any button to return home
+        ROS_INFO("Press any button to return home");
+        std::cin.ignore();
+
+        // reset
+        go_to_home_position();
+
     }
 
     

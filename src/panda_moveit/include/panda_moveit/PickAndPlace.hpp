@@ -105,4 +105,10 @@ public:
 
     void rviz(void);
     void gazebo(void);
+
+    bool move_cartesian_path_z(double z_postition);
+
+    bool user_defined_pose_vertical(void);
+
+    void testing(void);
 };
