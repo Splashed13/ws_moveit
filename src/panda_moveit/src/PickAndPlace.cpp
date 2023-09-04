@@ -581,6 +581,11 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
         moveit_msgs::RobotTrajectory trajectory;
         double fraction = move_group_interface_arm->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+        if (fraction < 0.9)
+        {
+            ROS_INFO("Only %.2f%% of the trajectory was followed", fraction * 100.0);
+            return false;
+        }
         ROS_INFO("Visualizing plan as trajectory line");
         visual_tools.publishTrajectoryLine(trajectory, joint_model_group_arm);
         visual_tools.trigger();
@@ -589,6 +594,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         std::cin.ignore();
         move_group_interface_arm->setMaxVelocityScalingFactor(0.25);
 
+        
         move_group_interface_arm->execute(trajectory);
 
         move_group_interface_arm->setMaxVelocityScalingFactor(0.5);
@@ -596,10 +602,11 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         // clear Sphere and Path namespaces from the visual tools rviz topic
         visual_tools.deleteAllMarkers();
         visual_tools.trigger();
+        return true;
 
     }
 
-    bool user_defined_pose_vertical(void)
+    bool PickandPlace::user_defined_pose_vertical(void)
     {
         // get user input for position only 
         do {
