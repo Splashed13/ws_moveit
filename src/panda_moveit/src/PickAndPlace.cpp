@@ -27,8 +27,6 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         scene = scene_;
         approach = approach_;
 
-        
-
     }
 
     void PickandPlace::writeRobotDetails()
@@ -70,6 +68,11 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         starting_orientation = move_group_interface_arm->getCurrentPose().pose.orientation;
 
         // move_group_interface_arm->setPlannerId("RRTConnectkConfigDefault");
+
+        // print scene and approach 
+        ROS_INFO("Scene: %s", scene.c_str());
+        ROS_INFO("Approach: %s", approach.c_str());
+        
       
     }
 
