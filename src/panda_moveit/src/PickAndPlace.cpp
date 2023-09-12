@@ -72,7 +72,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         // print scene and approach 
         ROS_INFO("Scene: %s", scene.c_str());
         ROS_INFO("Approach: %s", approach.c_str());
-        
+
       
     }
 
@@ -609,7 +609,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
     }
 
-    bool PickandPlace::user_defined_pose_vertical(void)
+    geometry_msgs::Pose PickandPlace::user_defined_pose_vertical(void)
     {
         // get user input for position only 
         do {
@@ -619,9 +619,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
         } while (std::cin.fail());
         
-        geometry_msgs::Pose desired_pose = calculate_target_pose(ee_position, {180.0, 0, 0});
-
-        return plan_and_execute_pose(desired_pose);
+        return calculate_target_pose(ee_position, {180.0, 0.0, 0.0});
     }
 
 
@@ -705,7 +703,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         std::cin.ignore();
     }
 
-    void PickandPlace::testing(void){
+    void PickandPlace::keyboard(void){
         writeRobotDetails();
         open_gripper();
 

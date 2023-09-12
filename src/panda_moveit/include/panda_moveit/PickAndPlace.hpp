@@ -108,7 +108,7 @@ public:
 
     bool move_cartesian_path_z(double z_postition);
 
-    bool user_defined_pose_vertical(void);
+    geometry_msgs::Pose PickandPlace::user_defined_pose_vertical(void);
 
-    void testing(void);
+    void keyboard(void);
 };

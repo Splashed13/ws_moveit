@@ -15,7 +15,7 @@ Panels:
         - /PointCloud21
         - /MarkerArray1
       Splitter Ratio: 0.7404426336288452
-    Tree Height: 441
+    Tree Height: 534
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -75,88 +75,6 @@ Visualization Manager:
         Interrupt Display: false
         Links:
           All Links Enabled: true
-          D435_camera1_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera1_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera2_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
@@ -306,88 +224,6 @@ Visualization Manager:
         Attached Body Color: 150; 50; 150
         Links:
           All Links Enabled: true
-          D435_camera1_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera1_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera1_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_color_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_color_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_left_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_left_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          D435_camera2_right_ir_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          D435_camera2_right_ir_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
@@ -507,52 +343,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        D435_camera1_bottom_screw_frame:
-          Value: false
-        D435_camera1_color_frame:
-          Value: false
-        D435_camera1_color_optical_frame:
-          Value: false
-        D435_camera1_depth_frame:
-          Value: false
-        D435_camera1_depth_optical_frame:
-          Value: true
-        D435_camera1_left_ir_frame:
-          Value: false
-        D435_camera1_left_ir_optical_frame:
-          Value: false
-        D435_camera1_link:
-          Value: false
-        D435_camera1_right_ir_frame:
-          Value: false
-        D435_camera1_right_ir_optical_frame:
-          Value: false
-        D435_camera2_bottom_screw_frame:
-          Value: false
-        D435_camera2_color_frame:
-          Value: false
-        D435_camera2_color_optical_frame:
-          Value: false
-        D435_camera2_depth_frame:
-          Value: false
-        D435_camera2_depth_optical_frame:
-          Value: true
-        D435_camera2_left_ir_frame:
-          Value: false
-        D435_camera2_left_ir_optical_frame:
-          Value: false
-        D435_camera2_link:
-          Value: false
-        D435_camera2_right_ir_frame:
-          Value: false
-        D435_camera2_right_ir_optical_frame:
-          Value: false
-        panda_EE:
-          Value: false
-        panda_K:
-          Value: false
-        panda_NE:
-          Value: false
         panda_hand:
           Value: true
         panda_hand_sc:
@@ -608,20 +398,6 @@ Visualization Manager:
       Tree:
         world:
           panda_link0:
-            D435_camera1_bottom_screw_frame:
-              D435_camera1_link:
-                D435_camera1_depth_frame:
-                  D435_camera1_color_frame:
-                    D435_camera1_color_optical_frame:
-                      {}
-                  D435_camera1_depth_optical_frame:
-                    {}
-                  D435_camera1_left_ir_frame:
-                    D435_camera1_left_ir_optical_frame:
-                      {}
-                  D435_camera1_right_ir_frame:
-                    D435_camera1_right_ir_optical_frame:
-                      {}
             panda_link0_sc:
               {}
             panda_link1:
@@ -646,25 +422,7 @@ Visualization Manager:
                           panda_link7_sc:
                             {}
                           panda_link8:
-                            panda_NE:
-                              panda_EE:
-                                panda_K:
-                                  {}
                             panda_hand:
-                              D435_camera2_bottom_screw_frame:
-                                D435_camera2_link:
-                                  D435_camera2_depth_frame:
-                                    D435_camera2_color_frame:
-                                      D435_camera2_color_optical_frame:
-                                        {}
-                                    D435_camera2_depth_optical_frame:
-                                      {}
-                                    D435_camera2_left_ir_frame:
-                                      D435_camera2_left_ir_optical_frame:
-                                        {}
-                                    D435_camera2_right_ir_frame:
-                                      D435_camera2_right_ir_optical_frame:
-                                        {}
                               panda_hand_sc:
                                 {}
                               panda_hand_tcp:
@@ -677,7 +435,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /pnp/pose_point
+      Marker Topic: /pick_and_place_cpp/pose_point
       Name: Marker
       Namespaces:
         {}
@@ -693,7 +451,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: RGB8
+      Color Transformer: ""
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -735,7 +493,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.293786525726318
+      Distance: 9.840256690979004
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -743,33 +501,33 @@ Visualization Manager:
         Value: false
       Field of View: 0.75
       Focal Point:
-        X: 0.30582940578460693
-        Y: -0.27785804867744446
-        Z: 0.1565181463956833
+        X: -2.366302490234375
+        Y: 0.2773698568344116
+        Z: -0.19297489523887634
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5200002789497375
+      Pitch: 0.37000027298927307
       Target Frame: panda_link0
-      Yaw: 1.0267703533172607
+      Yaw: 6.084952354431152
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
+    collapsed: false
   Height: 3803
   Help:
     collapsed: false
-  Hide Left Dock: true
+  Hide Left Dock: false
   Hide Right Dock: false
   MotionPlanning:
-    collapsed: true
+    collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000046300000e81fc0200000007fb000000100044006900730070006c006100790073000000003d000004a3000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000004e6000002f4000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006700000007e0000006de0000017d00ffffff0000087000000e8100000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000046300000e81fc0200000007fb000000100044006900730070006c006100790073010000003d00000253000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a005600690065007700730100000296000002f4000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000005900000092e0000017d00ffffff0000040700000e8100000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
-    collapsed: true
+    collapsed: false
   Width: 2160
   X: 3840
   Y: 0

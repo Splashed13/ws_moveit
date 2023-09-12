@@ -30,8 +30,8 @@ int main(int argc, char **argv)
     
     if (arg1 == "gazebo"){
         pnp.gazebo();
-    }else if (arg1 == "testing"){
-        pnp.testing();
+    }else if (arg1 == "keyboard"){
+        pnp.keyboard();
     }else{
         pnp.rviz();
     }
