@@ -210,8 +210,6 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             homogeneous_mat_current(2, 3) = current_pose.position.z;
 
             homogeneous_mat = homogeneous_mat_current * homogeneous_mat_arm;
-            // print the homogeneous matrix
-            std::cout << "Homogeneous matrix: " << std::endl << homogeneous_mat << std::endl;
 
             return Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
         }
@@ -622,7 +620,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
         } while (std::cin.fail());
 
-        ROS_INFO("Position: x = %f, y = %f, z = %f", ee_position[0], ee_position[1], ee_position[2]);
+        //ROS_INFO("Position: x = %f, y = %f, z = %f", ee_position[0], ee_position[1], ee_position[2]);
         
         return calculate_target_pose(ee_position, {180.0, 0.0, 0.0});
     }
@@ -758,20 +756,10 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
                 }
                 //retrieve the x and y position of the desired pose
                 double theta = std::atan2(desired_pose.position.y, desired_pose.position.x);
-
-                // Convert to degrees if needed
                 double theta_deg = theta * 180.0 / M_PI;
 
-                std::cout << "Theta in radians: " << theta << std::endl;
-                std::cout << "Theta in degrees: " << theta_deg << std::endl;
-
-                // press any button to rotate gripper
-                ROS_INFO("Press any button to rotate gripper");
-                std::cin.ignore();
-                            
-                desired_pose = calculate_target_pose({0.0, 0.0, 0.0} , {0.0, 0.0, -theta * 180.0 / M_PI}, true);
+                desired_pose = calculate_target_pose({0.0, 0.0, 0.0} , {0.0, 0.0, -theta_deg}, true);
             
-
                 if(!plan_and_execute_pose(desired_pose)){
                     ROS_INFO("Failed to rotate gripper");
                 } 
@@ -800,6 +788,15 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             }
         }
     }
+
+// USEFUL CHECK THAT CAN BE ADDED:
+// // Check if the pose is reachable
+// if (move_group_interface_arm->setApproximateJointValueTarget(pose_target)) {
+//     // Do the planning
+// } else {
+//     ROS_WARN("Target pose is not reachable");
+//     return false;
+// }
 
 
 // // Alternate approach to moving to the target pose arriving with a vertical orientation
