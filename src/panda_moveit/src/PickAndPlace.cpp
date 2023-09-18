@@ -181,10 +181,10 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
     }
 
 
-    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation)
+    geometry_msgs::Pose PickandPlace::calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, bool relative)
     {
         Eigen::Matrix4d homogeneous_mat;           
-        double pre_approach_distance = 0.0;
+        double end_effector_padding = 0.0;
 
         Eigen::Matrix4d homogeneous_mat_arm = Eigen::Matrix4d::Identity();
         homogeneous_mat_arm.block<3, 3>(0, 0) = Utilities::eulerXYZ_to_rotation_matrix(rotation);
@@ -192,14 +192,30 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         homogeneous_mat_arm(1, 3) = translation[1];
         homogeneous_mat_arm(2, 3) = translation[2];
 
+
         Eigen::Matrix4d homogeneous_end_effector = Eigen::Matrix4d::Identity();
-        homogeneous_end_effector(2, 3) = pre_approach_distance;
+        homogeneous_end_effector(2, 3) = end_effector_padding;
 
-        
-        // Convert the homogeneous transformation matrix to a pose
-        geometry_msgs::Pose pose_target = Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
+        if(!relative){
+            homogeneous_mat = homogeneous_mat_arm * homogeneous_end_effector.inverse();
+            return Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
+        }else{
+            // get current pose of the end effector
+            geometry_msgs::Pose current_pose = move_group_interface_arm->getCurrentPose().pose;
+            Eigen::Matrix4d homogeneous_mat_current = Eigen::Matrix4d::Identity();
+            Eigen::Quaterniond quaternion_current(current_pose.orientation.w, current_pose.orientation.x, current_pose.orientation.y, current_pose.orientation.z);
+            homogeneous_mat_current.block<3, 3>(0, 0) = quaternion_current.toRotationMatrix();
+            homogeneous_mat_current(0, 3) = current_pose.position.x;
+            homogeneous_mat_current(1, 3) = current_pose.position.y;
+            homogeneous_mat_current(2, 3) = current_pose.position.z;
 
-        return pose_target;
+            homogeneous_mat = homogeneous_mat_current * homogeneous_mat_arm;
+            // print the homogeneous matrix
+            std::cout << "Homogeneous matrix: " << std::endl << homogeneous_mat << std::endl;
+
+            return Utilities::homogeneous_matrix_to_pose(homogeneous_mat);
+        }
+    
     }
 
     void PickandPlace::add_pose_point(geometry_msgs::Point desired_position)
@@ -231,18 +247,13 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
     // Then a rotation quaternion is created for a -90 degree rotation around the y-axis. 
     // Finally, the marker's orientation quaternion is obtained by multiplying the end effector's quaternion by the rotation quaternion. 
     // The resulting quaternion is then converted back to a geometry_msgs/Quaternion and set as the marker's orientation.
-    void PickandPlace::add_pose_arrow(geometry_msgs::Pose target_pose, bool relative)
+    void PickandPlace::add_pose_arrow(geometry_msgs::Pose target_pose)
     {
         // Publish a marker at the desired pose
         visualization_msgs::Marker marker;
         marker.ns = "arrow";
         marker.id = 0;
-        if(relative){
-            marker.header.frame_id = "panda_hand_tcp";
-        }
-        else{
-            marker.header.frame_id = "panda_link0";
-        }
+        marker.header.frame_id = "panda_link0";
         marker.type = visualization_msgs::Marker::ARROW;
         marker.action = visualization_msgs::Marker::ADD;
         marker.scale.x = end_effector_palm_length;
@@ -373,19 +384,11 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
     }
 
-    bool PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target, bool relative){
+    bool PickandPlace::plan_and_execute_pose(geometry_msgs::Pose pose_target){
 
-        if(relative){
-            // set the pose target
-            move_group_interface_arm->setPoseReferenceFrame("panda_hand_tcp");
-            move_group_interface_arm->setPoseTarget(pose_target);
-            add_pose_arrow(pose_target, true);
+        move_group_interface_arm->setPoseTarget(pose_target);
+        add_pose_arrow(pose_target);
 
-        }else{
-            move_group_interface_arm->setPoseReferenceFrame("panda_link0");
-            move_group_interface_arm->setPoseTarget(pose_target);
-            add_pose_arrow(pose_target, false);
-        }
 
         // move to arm to the target pose
         bool success = (move_group_interface_arm->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -618,6 +621,8 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
             std::cin.clear();  // Clear the error flags
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // Clear the buffer
         } while (std::cin.fail());
+
+        ROS_INFO("Position: x = %f, y = %f, z = %f", ee_position[0], ee_position[1], ee_position[2]);
         
         return calculate_target_pose(ee_position, {180.0, 0.0, 0.0});
     }
@@ -703,30 +708,106 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
         std::cin.ignore();
     }
 
+
+    int PickandPlace::keyboard_options(void){
+        int choice;
+        bool valid_choice = false;
+
+        while (!valid_choice) {
+            ROS_INFO("Select an option:");
+            ROS_INFO("1: Go to position (vertical approach)");
+            ROS_INFO("2: Close gripper");
+            ROS_INFO("3: Open gripper");
+            ROS_INFO("4: Go to home position and exit");
+
+            std::cin >> choice;
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+            if (choice >= 1 && choice <= 4) {
+                valid_choice = true;
+            } else {
+                ROS_INFO("Invalid choice. Please try again.");
+            }
+        }
+
+        return choice;
+    }
+
+
     void PickandPlace::keyboard(void){
+        geometry_msgs::Pose desired_pose;
+        std::vector<double> desired_grip_width;
+
         writeRobotDetails();
         open_gripper();
 
-        // move just over the cube 
-        geometry_msgs::Pose target_pose;
-        target_pose.orientation = starting_orientation;
-        // get current position 
-        std::vector<double> current_position = get_current_ee_position();
-        target_pose.position.x = 0.6;
-        target_pose.position.y = current_position[1];
-        target_pose.position.z = current_position[2];
+        bool running = true;
 
-        if(!plan_and_execute_pose(target_pose)){
-            ROS_INFO("Failed to move to position");
-        }
-
-        // press any button to return home
-        ROS_INFO("Press any button to return home");
+        // print that we are in keyboard mode
+        ROS_INFO("Keyboard mode - Press any button to continue");
         std::cin.ignore();
 
-        // reset
-        go_to_home_position();
+        while(running){
+            int choice = keyboard_options();
 
+            if(choice == 1) {
+                desired_pose = user_defined_pose_vertical();
+                if(!plan_and_execute_pose(desired_pose)){
+                    ROS_INFO("Failed to move to position");
+                }
+                //retrieve the x and y position of the desired pose
+                double theta = std::atan2(desired_pose.position.y, desired_pose.position.x);
+
+                // Convert to degrees if needed
+                double theta_deg = theta * 180.0 / M_PI;
+
+                std::cout << "Theta in radians: " << theta << std::endl;
+                std::cout << "Theta in degrees: " << theta_deg << std::endl;
+
+                // press any button to rotate gripper
+                ROS_INFO("Press any button to rotate gripper");
+                std::cin.ignore();
+                            
+                desired_pose = calculate_target_pose({0.0, 0.0, 0.0} , {0.0, 0.0, -theta * 180.0 / M_PI}, true);
+            
+
+                if(!plan_and_execute_pose(desired_pose)){
+                    ROS_INFO("Failed to rotate gripper");
+                } 
+
+
+            } else if(choice == 2) {
+                double grip_value;
+                do {
+                    ROS_INFO("Enter desired closed grip value between 0.011 and 0.035: ");
+                    std::cin >> grip_value;
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } while(grip_value < 0.011 || grip_value > 0.035);
+
+                desired_grip_width = {grip_value, grip_value}; // Assuming the gripper takes a vector of joint values
+                if(!close_gripper(desired_grip_width)){
+                    ROS_INFO("Failed to close gripper");
+                }
+            } else if(choice == 3) {
+                open_gripper();
+            } else if(choice == 4) {
+                running = false;
+                go_to_home_position();
+            } else {
+                ROS_INFO("Invalid choice. Please try again.");
+            }
+        }
     }
 
-    
+
+// // Alternate approach to moving to the target pose arriving with a vertical orientation
+// // move just over the cube 
+// geometry_msgs::Pose target_pose;
+// target_pose.orientation = starting_orientation;
+// // get current position 
+// std::vector<double> current_position = get_current_ee_position();
+// target_pose.position.x = 0.6;
+// target_pose.position.y = current_position[1];
+// target_pose.position.z = current_position[2];

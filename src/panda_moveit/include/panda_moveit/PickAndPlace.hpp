@@ -84,10 +84,10 @@ public:
     void createCollisionObjectBox(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z);
     void createCollisionScene(void);
     void clean_scene(void);
-    geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation);
-    void add_pose_arrow(geometry_msgs::Pose target_pose, bool relative=false);
+    geometry_msgs::Pose calculate_target_pose(std::vector<double> translation, std::vector<double> rotation, bool relative=false);
+    void add_pose_arrow(geometry_msgs::Pose target_pose);
     std::vector<double> get_current_ee_position(void);
-    bool plan_and_execute_pose(geometry_msgs::Pose target_pose, bool relative=false);
+    bool plan_and_execute_pose(geometry_msgs::Pose target_pose);
     void add_pose_point(geometry_msgs::Point position);
     void determine_grasp_pose(void);
     void remove_pose_arrow(void);
@@ -108,7 +108,10 @@ public:
 
     bool move_cartesian_path_z(double z_postition);
 
-    geometry_msgs::Pose PickandPlace::user_defined_pose_vertical(void);
+    geometry_msgs::Pose user_defined_pose_vertical(void);
 
     void keyboard(void);
+
+    int keyboard_options(void);
+
 };
