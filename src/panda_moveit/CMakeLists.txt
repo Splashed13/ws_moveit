@@ -100,7 +100,6 @@ catkin_package(
     EIGEN3
 )
 
-
 include_directories(
   include
   SYSTEM

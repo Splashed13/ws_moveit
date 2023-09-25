@@ -29,15 +29,7 @@ private:
     // Add an action client for the franka_gripper grasp action
     actionlib::SimpleActionClient<franka_gripper::GraspAction> grasp_action_client;
 
-
     const double PLANNING_TIME = 15.0;
-    
-    const double gripper_max = 0.04;
-    const double gripper_min = 0.0;
-
-    // rotation max degrees
-    const double rotation_max = 180.0;
-    const double rotation_min = -180.0;
 
     const std::vector<double> OPEN_GRIPPER = {0.035, 0.035};
     const std::vector<double> CLOSE_GRIPPER = {0.011, 0.011};
@@ -65,6 +57,8 @@ private:
 
     // target orientation of the end effector
     geometry_msgs::Quaternion starting_orientation;
+
+    // home joint positions {0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785};
 
 
     std::vector<double> ee_rotation = {0.0, 0.0, 0.0};
