@@ -74,7 +74,7 @@ private:
 
 public:
     PickandPlace(std::string scene_, std::string approach_, ros::NodeHandle& nh);
-    void writeRobotDetails(void);
+    void intialise(void);
     void createCollisionObjectBox(std::string id, std::vector<double> dimensions, std::vector<double> position, double rotation_z);
     void createCollisionScene(void);
     void clean_scene(void);

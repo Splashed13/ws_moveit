@@ -7,7 +7,7 @@
 class Manipulate
 {
     private:
-        const std::string PLANNING_GROUP_ARM = "panda_manipulator"; 
+        const std::string PLANNING_GROUP_ARM = "panda_arm_hand"; 
         const std::string PLANNING_GROUP_GRIPPER = "panda_hand"; 
         const double PLANNING_TIME = 15.0;
 

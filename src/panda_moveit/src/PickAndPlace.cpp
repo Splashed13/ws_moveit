@@ -29,7 +29,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
     }
 
-    void PickandPlace::writeRobotDetails()
+    void PickandPlace::intialise()
     {
         // Print out the planning frame for the arm
         ROS_INFO("Planning frame: %s", move_group_interface_arm->getPlanningFrame().c_str());
@@ -41,6 +41,9 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
         // Get the joint names for the arm and concatenate them into a single string, then print
         std::vector<std::string> jointNamesArm = move_group_interface_arm->getJoints();
+        std::string jointNamesArmString = boost::algorithm::join(jointNamesArm, ", ");
+        ROS_INFO("Arm joints names: %s", jointNamesArmString.c_str());
+
         // Get the joint names for the gripper and concatenate them into a single string, then print
         std::vector<std::string> jointNamesGripper = move_group_interface_gripper->getJoints();
         std::string jointNamesGripperString = boost::algorithm::join(jointNamesGripper, ", ");
@@ -69,11 +72,9 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
 
         // move_group_interface_arm->setPlannerId("RRTConnectkConfigDefault");
 
-        // print scene and approach 
-        ROS_INFO("Scene: %s", scene.c_str());
-        ROS_INFO("Approach: %s", approach.c_str());
-
-      
+        // print scene and approach if scene and approach not empty, else print "No Scene" and "No Approach"
+        ROS_INFO("Scene: %s", scene.empty() ? "No Scene" : scene.c_str());
+        ROS_INFO("Approach: %s", approach.empty() ? "No Approach" : approach.c_str());
     }
 
 
@@ -630,8 +631,7 @@ PickandPlace::PickandPlace(std::string scene_, std::string approach_, ros::NodeH
     {
         geometry_msgs::Pose desired_pose;
 
-        // Write robot details
-        writeRobotDetails();
+        initialise();
 
         // open gripper
         open_gripper();
